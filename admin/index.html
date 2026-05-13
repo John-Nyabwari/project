@@ -3,419 +3,379 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Makar Hotel | Enterprise Management Console</title>
+  <title>Makar Hotel | Management Console</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
+      --gold: #c9a227;
+      --gold-hover: #b08d1e;
+      --bg: #f8fafc;
       --sidebar-w: 260px;
       --sidebar-collapsed: 80px;
-      --gold: #c9a227;
-      --gold-light: #fdf6e3;
-      --primary: #0f172a;
-      --secondary: #1e293b;
-      --bg-light: #f1f5f9;
-      --text-dark: #334155;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --info: #3b82f6;
     }
-    body { font-family: 'Inter', sans-serif; background: var(--bg-light); color: var(--text-dark); overflow: hidden; }
+    body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: #334155; overflow-x: hidden; }
     h1, h2, h3, h4, h5, h6 { font-family: 'Playfair Display', serif; }
-    .gold-text { color: var(--gold); }
-    .gold-bg { background-color: var(--gold); }
-    .sidebar { width: var(--sidebar-w); transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    
+    .sidebar { width: var(--sidebar-w); transition: width 0.3s ease; }
     .sidebar.collapsed { width: var(--sidebar-collapsed); }
-    .nav-link.active { background: linear-gradient(90deg, rgba(201,162,39,0.15) 0%, transparent 100%); border-left: 4px solid var(--gold); color: var(--gold); }
-    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s; border: 1px solid #e2e8f0; }
-    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.08); }
-    .btn-primary { background: var(--gold); color: #fff; transition: all 0.2s; }
-    .btn-primary:hover { background: #b89322; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(201,162,39,0.3); }
-    .btn-secondary { background: var(--secondary); color: #fff; transition: all 0.2s; }
+    
+    .nav-btn.active { background: rgba(201, 162, 39, 0.1); border-left: 4px solid var(--gold); color: var(--gold); font-weight: 600; }
+    
+    .btn-gold { background: var(--gold); color: #fff; transition: all 0.2s; }
+    .btn-gold:hover { background: var(--gold-hover); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(201,162,39,0.3); }
+    
+    .btn-secondary { background: #1e293b; color: #fff; transition: all 0.2s; }
     .btn-secondary:hover { background: #334155; }
-    .status-badge { padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); transition: all 0.2s; border: 1px solid #e2e8f0; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+
+    .status-badge { padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
     .status-occupied { background: #dbeafe; color: #1e40af; }
     .status-vacant { background: #dcfce7; color: #166534; }
     .status-dirty { background: #fee2e2; color: #991b1b; }
-    .status-cleaning { background: #fef3c7; color: #92400e; }
-    .status-maintenance { background: #f3f4f6; color: #4b5563; }
+    .status-cleaning { background: #fef9c3; color: #854d0e; }
+    .status-maintenance { background: #f3f4f6; color: #475569; }
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-preparing { background: #e0e7ff; color: #3730a3; }
     .status-ready { background: #ccfbf1; color: #115e59; }
     .status-served { background: #f1f5f9; color: #475569; }
-    .status-critical { background: #fee2e2; color: #991b1b; }
     .status-low { background: #fef3c7; color: #92400e; }
+    .status-critical { background: #fee2e2; color: #991b1b; }
     .status-ok { background: #dcfce7; color: #166534; }
-    
-    .toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; background: #0f172a; color: #fff; transform: translateY(120px); opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 10000; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    .view-section { display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .view-section.active { display: block; opacity: 1; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 10px; background: #0f172a; color: #fff; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 9999; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
     .toast.show { transform: translateY(0); opacity: 1; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50; }
+    .modal-backdrop.show { display: flex; }
     
-    .view-section { display: none; animation: fadeIn 0.4s ease-out; }
-    .view-section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50; }
-    .modal-overlay.show { display: flex; }
-    
-    .pulse-dot { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .sidebar.collapsed .sidebar-text { display: none; }
   </style>
 </head>
-<body class="h-screen overflow-hidden flex">
+<body class="h-screen flex flex-col overflow-hidden">
 
-  <!-- Sidebar -->
-  <aside class="sidebar bg-slate-900 text-slate-300 flex flex-col h-full transition-all duration-300 z-30" id="main-sidebar">
-    <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-      <img src="https://image.qwenlm.ai/public_source/8353e82f-a3d3-4977-a19e-71fe9daf5595/136b5c43d-0748-4751-ab53-6854db18c23a.png" class="w-10 h-10 rounded-xl shadow-lg object-cover">
-      <div class="overflow-hidden whitespace-nowrap">
-        <h1 class="text-lg font-bold text-white tracking-wide">MAKAR HOTEL</h1>
-        <p class="text-[10px] text-slate-400 uppercase tracking-widest">Enterprise Console</p>
+  <!-- LOGIN PAGE -->
+  <div id="login-page" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all">
+      <div class="p-8">
+        <div class="flex justify-center mb-6">
+          <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white text-2xl shadow-lg">
+            <i class="fa-solid fa-hotel"></i>
+          </div>
+        </div>
+        <h2 class="text-2xl font-bold text-center text-slate-800 mb-2">Welcome Back</h2>
+        <p class="text-center text-slate-500 text-sm mb-8">Enter your credentials to access the management console.</p>
+        
+        <form onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Email Address</label>
+            <input type="email" id="login-email" value="admin@makarhotels.com" class="w-full border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition" required>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Password</label>
+            <input type="password" id="login-password" value="admin" class="w-full border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition" required>
+          </div>
+          <button type="submit" class="w-full btn-gold py-3 rounded-lg font-bold text-lg shadow-md mt-2">Sign In</button>
+          <div class="text-center text-xs text-slate-400 mt-4"><a href="#" class="hover:underline">Forgot Password?</a></div>
+        </form>
+      </div>
+      <div class="bg-slate-50 p-4 text-center border-t border-slate-100">
+        <p class="text-xs text-slate-500">&copy; 2026 Makar Hotel Management System</p>
       </div>
     </div>
-    
-    <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3" id="nav-container">
-      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2 px-3">Main</div>
-      <button onclick="navigate('dashboard')" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="nav-text">Executive Dashboard</span></button>
-      <button onclick="navigate('front-desk')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-reception w-5 text-center"></i> <span class="nav-text">Front Desk & Rooms</span></button>
-      
-      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-3">Operations</div>
-      <button onclick="navigate('housekeeping')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-broom w-5 text-center"></i> <span class="nav-text">Housekeeping</span></button>
-      <button onclick="navigate('fb')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-utensils w-5 text-center"></i> <span class="nav-text">F&B / Virtual Waiter</span></button>
-      <button onclick="navigate('inventory')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-boxes-stacked w-5 text-center"></i> <span class="nav-text">Inventory & Supplies</span></button>
-      
-      <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-3">Admin</div>
-      <button onclick="navigate('hr')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-users w-5 text-center"></i> <span class="nav-text">HR & Payroll</span></button>
-      <button onclick="navigate('reports')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-file-lines w-5 text-center"></i> <span class="nav-text">Reports & Analytics</span></button>
-      <button onclick="navigate('settings')" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm font-medium"><i class="fa-solid fa-gear w-5 text-center"></i> <span class="nav-text">System Settings</span></button>
-    </nav>
+  </div>
 
-    <div class="p-4 border-t border-slate-800">
-      <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50">
-        <img src="https://ui-avatars.com/api/?name=Admin+User&background=0f172a&color=c9a227&bold=true&rounded=true" class="w-9 h-9 rounded-full border-2 border-slate-600">
-        <div class="overflow-hidden whitespace-nowrap">
-          <p class="text-sm font-semibold text-white truncate">Branch Manager</p>
-          <p class="text-xs text-slate-400 truncate">admin@makarhotel.com</p>
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel" class="flex h-full hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar bg-slate-900 text-slate-300 flex flex-col h-full z-30" id="sidebar">
+      <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white shadow-lg">
+          <i class="fa-solid fa-hotel text-lg"></i>
+        </div>
+        <div class="overflow-hidden whitespace-nowrap sidebar-text">
+          <h1 class="text-lg font-bold text-white tracking-wide">MAKAR HOTEL</h1>
+          <p class="text-[10px] text-slate-400 uppercase tracking-widest">Enterprise Console</p>
         </div>
       </div>
-    </div>
-  </aside>
+      
+      <nav class="flex-1 overflow-y-auto py-4 space-y-1 px-3">
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2 px-3 sidebar-text">Main</div>
+        <button onclick="navigate('dashboard')" class="nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-chart-pie w-5 text-center"></i> <span class="sidebar-text">Executive Dashboard</span>
+        </button>
+        <button onclick="navigate('front-desk')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-bell-concierge w-5 text-center"></i> <span class="sidebar-text">Front Desk & Rooms</span>
+        </button>
+        
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-3 sidebar-text">Operations</div>
+        <button onclick="navigate('housekeeping')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-broom w-5 text-center"></i> <span class="sidebar-text">Housekeeping</span>
+        </button>
+        <button onclick="navigate('fb')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-utensils w-5 text-center"></i> <span class="sidebar-text">F&B / Virtual Waiter</span>
+        </button>
+        <button onclick="navigate('inventory')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> <span class="sidebar-text">Inventory & Supplies</span>
+        </button>
+        
+        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-3 sidebar-text">Admin</div>
+        <button onclick="navigate('hr')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-users w-5 text-center"></i> <span class="sidebar-text">HR & Payroll</span>
+        </button>
+        <button onclick="navigate('reports')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-file-lines w-5 text-center"></i> <span class="sidebar-text">Reports & Analytics</span>
+        </button>
+        <button onclick="navigate('settings')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition text-sm">
+          <i class="fa-solid fa-gear w-5 text-center"></i> <span class="sidebar-text">System Settings</span>
+        </button>
+      </nav>
 
-  <!-- Main Layout -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden transition-all duration-300">
-    <!-- Top Header -->
-    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-20 shadow-sm">
-      <div class="flex items-center gap-4">
-        <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-800 transition p-2 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars text-lg"></i></button>
-        <h2 class="text-xl font-bold text-slate-800" id="page-title">Executive Dashboard</h2>
-      </div>
-      <div class="flex items-center gap-4">
-        <div class="hidden md:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
-          <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span> System Online | <span id="live-clock"></span>
-        </div>
-        <button class="relative w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition">
-          <i class="fa-regular fa-bell"></i>
-          <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+      <div class="p-4 border-t border-slate-800">
+        <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-800 transition text-sm text-slate-400 hover:text-white">
+          <i class="fa-solid fa-right-from-bracket"></i> <span class="sidebar-text">Sign Out</span>
         </button>
       </div>
-    </header>
+    </aside>
 
-    <!-- Content Area -->
-    <main class="flex-1 overflow-y-auto p-6 scrollbar-hide bg-slate-50" id="content-area">
-      
-      <!-- DASHBOARD -->
-      <section id="view-dashboard" class="view-section active space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div class="card p-5 border-l-4 border-blue-500">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-sm font-medium text-slate-500">Today's Revenue</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1">Ksh 284,500</p>
-              </div>
-              <span class="text-green-500 text-xs font-semibold bg-green-50 px-2 py-1 rounded-lg">+14.2%</span>
-            </div>
-          </div>
-          <div class="card p-5 border-l-4 border-indigo-500">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-sm font-medium text-slate-500">Occupancy Rate</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1">72.5%</p>
-              </div>
-              <span class="text-blue-500 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-lg">45/62 Rooms</span>
-            </div>
-          </div>
-          <div class="card p-5 border-l-4 border-yellow-500">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-sm font-medium text-slate-500">Active F&B Orders</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1">12</p>
-              </div>
-              <span class="text-yellow-600 text-xs font-semibold bg-yellow-50 px-2 py-1 rounded-lg">Kitchen Active</span>
-            </div>
-          </div>
-          <div class="card p-5 border-l-4 border-rose-500">
-            <div class="flex justify-between items-start">
-              <div>
-                <p class="text-sm font-medium text-slate-500">Pending Cleanings</p>
-                <p class="text-2xl font-bold text-slate-800 mt-1">8</p>
-              </div>
-              <span class="text-rose-500 text-xs font-semibold bg-rose-50 px-2 py-1 rounded-lg">3 High Priority</span>
-            </div>
-          </div>
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
+      <!-- Top Header -->
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-20">
+        <div class="flex items-center gap-4">
+          <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-800 p-2 rounded hover:bg-slate-100"><i class="fa-solid fa-bars text-lg"></i></button>
+          <h2 class="text-xl font-bold text-slate-800" id="page-title">Executive Dashboard</h2>
         </div>
+        <div class="flex items-center gap-4">
+          <div class="hidden md:flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Online | <span id="live-clock"></span>
+          </div>
+          <button class="relative w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition">
+            <i class="fa-regular fa-bell"></i>
+            <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
+          <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold cursor-pointer">BM</div>
+        </div>
+      </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="card p-6 lg:col-span-2">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="font-semibold text-slate-700">Revenue & ADR Trend (30 Days)</h3>
-              <div class="flex gap-2">
-                <button class="px-3 py-1 text-xs rounded-full bg-slate-100 hover:bg-slate-200 transition">Rev</button>
-                <button class="px-3 py-1 text-xs rounded-full bg-transparent hover:bg-slate-100 transition text-slate-500">Occ</button>
+      <!-- Content Area -->
+      <main class="flex-1 overflow-y-auto p-6 bg-slate-50" id="content-area">
+        
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="view-section active space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div class="card p-5 border-l-4 border-blue-500">
+              <div class="flex justify-between items-start">
+                <div><p class="text-sm font-medium text-slate-500">Today's Revenue</p><p class="text-2xl font-bold text-slate-800 mt-1">Ksh 284,500</p></div>
+                <span class="text-green-500 text-xs font-semibold bg-green-50 px-2 py-1 rounded-lg">+14.2%</span>
               </div>
             </div>
-            <canvas id="revenueChart" height="200"></canvas>
+            <div class="card p-5 border-l-4 border-indigo-500">
+              <div class="flex justify-between items-start">
+                <div><p class="text-sm font-medium text-slate-500">Occupancy Rate</p><p class="text-2xl font-bold text-slate-800 mt-1">72.5%</p></div>
+                <span class="text-blue-500 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-lg">45/62 Rooms</span>
+              </div>
+            </div>
+            <div class="card p-5 border-l-4 border-yellow-500">
+              <div class="flex justify-between items-start">
+                <div><p class="text-sm font-medium text-slate-500">Active F&B Orders</p><p class="text-2xl font-bold text-slate-800 mt-1">12</p></div>
+                <span class="text-yellow-600 text-xs font-semibold bg-yellow-50 px-2 py-1 rounded-lg">Kitchen Active</span>
+              </div>
+            </div>
+            <div class="card p-5 border-l-4 border-rose-500">
+              <div class="flex justify-between items-start">
+                <div><p class="text-sm font-medium text-slate-500">Pending Cleanings</p><p class="text-2xl font-bold text-slate-800 mt-1">8</p></div>
+                <span class="text-rose-500 text-xs font-semibold bg-rose-50 px-2 py-1 rounded-lg">3 High Priority</span>
+              </div>
+            </div>
           </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card p-6 lg:col-span-2">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-slate-700">Revenue Trend (30 Days)</h3>
+                <select class="text-xs border rounded px-2 py-1 bg-slate-50"><option>Last 30 Days</option><option>This Month</option></select>
+              </div>
+              <canvas id="revenueChart" height="200"></canvas>
+            </div>
+            <div class="card p-6">
+              <h3 class="font-semibold text-slate-700 mb-4">Room Status Distribution</h3>
+              <canvas id="roomStatusChart" height="200"></canvas>
+            </div>
+          </div>
+
           <div class="card p-6">
-            <h3 class="font-semibold text-slate-700 mb-4">Room Status Distribution</h3>
-            <canvas id="roomStatusChart" height="200"></canvas>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="card p-6 lg:col-span-2">
             <h3 class="font-semibold text-slate-700 mb-4">Recent System Activity</h3>
             <div class="overflow-x-auto">
               <table class="w-full text-sm text-left">
                 <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-                  <tr><th class="px-4 py-3 rounded-tl-lg">Time</th><th class="px-4 py-3">Source</th><th class="px-4 py-3">Action</th><th class="px-4 py-3 rounded-tr-lg">Status</th></tr>
+                  <tr><th class="px-4 py-3">Time</th><th class="px-4 py-3">Source</th><th class="px-4 py-3">Action</th><th class="px-4 py-3">Status</th></tr>
                 </thead>
                 <tbody id="activity-log-body" class="divide-y divide-slate-100"></tbody>
               </table>
             </div>
           </div>
-          <div class="card p-6">
-            <h3 class="font-semibold text-slate-700 mb-4">Quick Actions</h3>
-            <div class="space-y-3">
-              <button onclick="navigate('front-desk'); setTimeout(() => openModal('checkin-modal'), 300)" class="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg flex items-center gap-3 transition text-left">
-                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fa-solid fa-user-plus"></i></div>
-                <span class="font-medium text-sm">Check-in Guest</span>
-              </button>
-              <button onclick="navigate('fb')" class="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg flex items-center gap-3 transition text-left">
-                <div class="w-8 h-8 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600"><i class="fa-solid fa-utensils"></i></div>
-                <span class="font-medium text-sm">View Kitchen Orders</span>
-              </button>
-              <button onclick="navigate('inventory')" class="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-lg flex items-center gap-3 transition text-left">
-                <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600"><i class="fa-solid fa-box"></i></div>
-                <span class="font-medium text-sm">Low Stock Alerts</span>
-              </button>
+        </section>
+
+        <!-- FRONT DESK -->
+        <section id="view-front-desk" class="view-section space-y-5">
+          <div class="flex flex-col md:flex-row justify-between gap-4 mb-2">
+            <div class="flex gap-3 w-full md:w-auto">
+              <input type="text" placeholder="Search room or guest..." class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none w-full md:w-64">
+              <select class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none">
+                <option>All Floors</option><option>1st Floor</option><option>2nd Floor</option><option>3rd Floor</option>
+              </select>
+            </div>
+            <div class="flex gap-3">
+              <button onclick="openModal('checkin-modal')" class="btn-gold px-5 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Walk-in</button>
+              <button onclick="navigate('housekeeping')" class="btn-secondary px-5 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2"><i class="fa-solid fa-broom"></i> HK Tasks</button>
             </div>
           </div>
-        </div>
-      </section>
 
-      <!-- FRONT DESK -->
-      <section id="view-front-desk" class="view-section space-y-5">
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-2">
-          <div class="flex gap-3 w-full md:w-auto">
-            <input type="text" placeholder="Search room or guest..." class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none w-full md:w-64">
-            <select class="bg-white border border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none">
-              <option>All Floors</option><option>1st Floor</option><option>2nd Floor</option><option>3rd Floor</option>
-            </select>
+          <div class="flex gap-4 mb-4 overflow-x-auto pb-2">
+            <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Occupied: 45</div>
+            <div class="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> Vacant: 12</div>
+            <div class="bg-yellow-50 text-yellow-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Cleaning: 3</div>
           </div>
-          <div class="flex gap-3">
-            <button onclick="openModal('checkin-modal')" class="btn-primary px-5 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2"><i class="fa-solid fa-plus"></i> New Walk-in</button>
-            <button onclick="navigate('housekeeping')" class="btn-secondary px-5 py-2 rounded-lg text-sm font-semibold shadow-sm flex items-center gap-2"><i class="fa-solid fa-broom"></i> HK Tasks</button>
+
+          <div class="card overflow-hidden">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                <tr><th class="px-4 py-3">Room</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Guest</th><th class="px-4 py-3">Check-out</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr>
+              </thead>
+              <tbody id="rooms-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
           </div>
-        </div>
+        </section>
 
-        <div class="flex gap-4 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-          <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Occupied: 45</div>
-          <div class="bg-green-50 text-green-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> Vacant: 12</div>
-          <div class="bg-yellow-50 text-yellow-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Cleaning: 3</div>
-          <div class="bg-red-50 text-red-700 px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-500"></span> Maintenance: 2</div>
-        </div>
-
-        <div class="card overflow-hidden">
-          <table class="w-full text-sm text-left">
-            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-              <tr><th class="px-4 py-3">Room</th><th class="px-4 py-3">Type</th><th class="px-4 py-3">Guest</th><th class="px-4 py-3">Check-out</th><th class="px-4 py-3">Balance</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Actions</th></tr>
-            </thead>
-            <tbody id="rooms-table-body" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- HOUSEKEEPING -->
-      <section id="view-housekeeping" class="view-section space-y-5">
-        <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-          <div class="flex gap-4 text-sm flex-wrap">
-            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-500"></span> High Priority: <b id="hk-high">0</b></span>
-            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Medium: <b id="hk-med">0</b></span>
-            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Completed: <b id="hk-done">0</b></span>
-          </div>
-          <button onclick="autoAssignTasks()" class="btn-primary px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Assign</button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="housekeeping-grid"></div>
-      </section>
-
-      <!-- F&B / VIRTUAL WAITER -->
-      <section id="view-fb" class="view-section space-y-5">
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-lg font-semibold">Virtual Waiter Order Queue</h3>
-          <div class="flex gap-2">
-            <span class="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Total Orders Today: <b class="text-slate-800">24</b></span>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="fb-orders-grid"></div>
-      </section>
-
-      <!-- INVENTORY -->
-      <section id="view-inventory" class="view-section space-y-5">
-        <div class="flex flex-col md:flex-row justify-between gap-4 mb-2">
-          <h3 class="text-lg font-semibold">Stock Overview & Procurement</h3>
-          <button onclick="openModal('po-modal')" class="btn-primary px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Generate PO</button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
-          <div class="card p-4 bg-green-50 border-green-200 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-green-700">OK Stock</p>
-              <p class="text-2xl font-bold text-green-800">124 Items</p>
+        <!-- HOUSEKEEPING -->
+        <section id="view-housekeeping" class="view-section space-y-5">
+          <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex gap-4 text-sm flex-wrap">
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-500"></span> High Priority: <b id="hk-high">0</b></span>
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Medium: <b id="hk-med">0</b></span>
+              <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Completed: <b id="hk-done">0</b></span>
             </div>
-            <i class="fa-solid fa-check-circle text-2xl text-green-500"></i>
+            <button onclick="autoAssignTasks()" class="btn-gold px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Assign</button>
           </div>
-          <div class="card p-4 bg-yellow-50 border-yellow-200 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-yellow-700">Low Stock</p>
-              <p class="text-2xl font-bold text-yellow-800">8 Items</p>
-            </div>
-            <i class="fa-solid fa-triangle-exclamation text-2xl text-yellow-500"></i>
-          </div>
-          <div class="card p-4 bg-red-50 border-red-200 flex items-center justify-between">
-            <div>
-              <p class="text-sm text-red-700">Critical / Out</p>
-              <p class="text-2xl font-bold text-red-800">3 Items</p>
-            </div>
-            <i class="fa-solid fa-circle-xmark text-2xl text-red-500"></i>
-          </div>
-        </div>
-        <div class="card overflow-hidden">
-          <table class="w-full text-sm text-left">
-            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-              <tr><th class="px-4 py-3">Item</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">In Stock</th><th class="px-4 py-3">Reorder Point</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr>
-            </thead>
-            <tbody id="inventory-table-body" class="divide-y divide-slate-100"></tbody>
-          </table>
-        </div>
-      </section>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="housekeeping-grid"></div>
+        </section>
 
-      <!-- HR & PAYROLL -->
-      <section id="view-hr" class="view-section space-y-5">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="card p-6 lg:col-span-2">
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="font-semibold text-slate-700">Staff Schedule (Today)</h3>
-              <button onclick="showToast('Shift schedule updated and published')" class="text-xs text-blue-600 hover:underline">Publish Updates</button>
-            </div>
-            <div class="space-y-3" id="staff-schedule-list"></div>
-          </div>
-          <div class="card p-6">
-            <h3 class="font-semibold text-slate-700 mb-4">Payroll Summary (May 2026)</h3>
-            <div class="space-y-4">
-              <div class="flex justify-between text-sm"><span class="text-slate-500">Gross Payroll</span><span class="font-bold">Ksh 2,850,000</span></div>
-              <div class="flex justify-between text-sm"><span class="text-slate-500">Overtime & Allowances</span><span class="font-bold text-yellow-600">Ksh 145,000</span></div>
-              <div class="flex justify-between text-sm"><span class="text-slate-500">NSSF & NHIF Deductions</span><span class="font-bold text-red-500">-Ksh 112,400</span></div>
-              <div class="flex justify-between text-sm"><span class="text-slate-500">PAYE Tax</span><span class="font-bold text-red-500">-Ksh 320,000</span></div>
-              <hr class="border-slate-200">
-              <div class="flex justify-between text-base font-bold"><span>Net Disbursement</span><span class="text-green-600">Ksh 2,562,600</span></div>
-              <button onclick="showToast('Payroll processed successfully. Payslips sent to staff emails.')" class="w-full btn-primary py-2.5 rounded-lg text-sm font-semibold mt-2">Process Payroll</button>
+        <!-- F&B / VIRTUAL WAITER -->
+        <section id="view-fb" class="view-section space-y-5">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="text-lg font-semibold">Virtual Waiter Order Queue</h3>
+            <div class="flex gap-2">
+              <span class="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">Total Orders Today: <b class="text-slate-800">24</b></span>
             </div>
           </div>
-        </div>
-        <div class="card p-6">
-          <h3 class="font-semibold text-slate-700 mb-4">Employee Directory</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="staff-grid"></div>
-        </div>
-      </section>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5" id="fb-orders-grid"></div>
+        </section>
 
-      <!-- REPORTS -->
-      <section id="view-reports" class="view-section space-y-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-red-500" onclick="showToast('Generating Daily Revenue Report...')">
-            <div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-file-pdf text-red-500 text-xl"></i><h4 class="font-semibold">Daily Revenue</h4></div>
-            <p class="text-xs text-slate-500">Export PDF/Excel with M-Pesa & card breakdowns.</p>
+        <!-- INVENTORY -->
+        <section id="view-inventory" class="view-section space-y-5">
+          <div class="flex flex-col md:flex-row justify-between gap-4 mb-2">
+            <h3 class="text-lg font-semibold">Stock Overview & Procurement</h3>
+            <button onclick="openModal('po-modal')" class="btn-gold px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"><i class="fa-solid fa-file-invoice-dollar"></i> Generate PO</button>
           </div>
-          <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-blue-500" onclick="showToast('Generating Occupancy Report...')">
-            <div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-chart-line text-blue-500 text-xl"></i><h4 class="font-semibold">Occupancy Analytics</h4></div>
-            <p class="text-xs text-slate-500">Monthly stay patterns, ADR, RevPAR trends.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+            <div class="card p-4 bg-green-50 border-green-200 flex items-center justify-between"><div><p class="text-sm text-green-700">OK Stock</p><p class="text-2xl font-bold text-green-800">124 Items</p></div><i class="fa-solid fa-check-circle text-2xl text-green-500"></i></div>
+            <div class="card p-4 bg-yellow-50 border-yellow-200 flex items-center justify-between"><div><p class="text-sm text-yellow-700">Low Stock</p><p class="text-2xl font-bold text-yellow-800">8 Items</p></div><i class="fa-solid fa-triangle-exclamation text-2xl text-yellow-500"></i></div>
+            <div class="card p-4 bg-red-50 border-red-200 flex items-center justify-between"><div><p class="text-sm text-red-700">Critical / Out</p><p class="text-2xl font-bold text-red-800">3 Items</p></div><i class="fa-solid fa-circle-xmark text-2xl text-red-500"></i></div>
           </div>
-          <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-yellow-500" onclick="showToast('Generating F&B Report...')">
-            <div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-chart-pie text-yellow-500 text-xl"></i><h4 class="font-semibold">F&B Performance</h4></div>
-            <p class="text-xs text-slate-500">Menu popularity, ingredient costs, margins.</p>
+          <div class="card overflow-hidden">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                <tr><th class="px-4 py-3">Item</th><th class="px-4 py-3">Category</th><th class="px-4 py-3">In Stock</th><th class="px-4 py-3">Reorder Point</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Action</th></tr>
+              </thead>
+              <tbody id="inventory-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
           </div>
-          <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-green-500" onclick="showToast('Generating Audit Log...')">
-            <div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-file-shield text-green-500 text-xl"></i><h4 class="font-semibold">System Audit</h4></div>
-            <p class="text-xs text-slate-500">User actions, security events, data changes.</p>
-          </div>
-        </div>
-        <div class="card p-6">
-          <h3 class="font-semibold text-slate-700 mb-4">Automated Report Scheduler</h3>
-          <div class="flex flex-wrap gap-4">
-            <label class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 cursor-pointer"><input type="checkbox" checked class="accent-yellow-500 w-4 h-4"> Daily Email Summary to Manager</label>
-            <label class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 cursor-pointer"><input type="checkbox" checked class="accent-yellow-500 w-4 h-4"> Weekly Inventory to Supplier</label>
-            <label class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 cursor-pointer"><input type="checkbox" class="accent-yellow-500 w-4 h-4"> Monthly Payroll to Accountant</label>
-            <button class="btn-secondary px-4 py-2 rounded-lg text-sm ml-auto">Save Schedule</button>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- SETTINGS -->
-      <section id="view-settings" class="view-section space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="card p-6">
-            <h3 class="font-semibold text-slate-700 mb-4">System Configuration</h3>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">Guest Portal QR Ordering</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
-              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">Auto-assign HK on Checkout</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
-              <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">M-Pesa Auto-Reconciliation</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
-            </div>
-          </div>
-          <div class="card p-6">
-            <h3 class="font-semibold text-slate-700 mb-4">Role-Based Access Control (RBAC)</h3>
-            <div class="space-y-3">
-              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                <div><p class="font-medium text-sm">Branch Manager</p><p class="text-xs text-slate-500">Full System Access</p></div>
-                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">Active</span>
+        <!-- HR & PAYROLL -->
+        <section id="view-hr" class="view-section space-y-5">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="card p-6 lg:col-span-2">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-slate-700">Staff Schedule (Today)</h3>
+                <button onclick="showToast('Shift schedule updated and published')" class="text-xs text-blue-600 hover:underline">Publish Updates</button>
               </div>
-              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                <div><p class="font-medium text-sm">Front Desk Agent</p><p class="text-xs text-slate-500">Rooms, Guests, Folios</p></div>
-                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">Active</span>
+              <div class="space-y-3" id="staff-schedule-list"></div>
+            </div>
+            <div class="card p-6">
+              <h3 class="font-semibold text-slate-700 mb-4">Payroll Summary (May 2026)</h3>
+              <div class="space-y-4">
+                <div class="flex justify-between text-sm"><span class="text-slate-500">Gross Payroll</span><span class="font-bold">Ksh 2,850,000</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-500">Overtime</span><span class="font-bold text-yellow-600">Ksh 145,000</span></div>
+                <div class="flex justify-between text-sm"><span class="text-slate-500">NSSF & NHIF</span><span class="font-bold text-red-500">-Ksh 112,400</span></div>
+                <hr class="border-slate-200">
+                <div class="flex justify-between text-base font-bold"><span>Net Disbursement</span><span class="text-green-600">Ksh 2,562,600</span></div>
+                <button onclick="showToast('Payroll processed successfully. Payslips sent.')" class="w-full btn-gold py-2.5 rounded-lg text-sm font-semibold mt-2">Process Payroll</button>
               </div>
-              <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-center">
-                <div><p class="font-medium text-sm">Kitchen / F&B Staff</p><p class="text-xs text-slate-500">Orders, Menu, Stock</p></div>
-                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-semibold">Restricted</span>
-              </div>
-              <button onclick="showToast('RBAC configuration saved successfully')" class="btn-secondary w-full py-2.5 rounded-lg text-sm font-semibold mt-2">Update Permissions</button>
             </div>
           </div>
-        </div>
-      </section>
+          <div class="card p-6">
+            <h3 class="font-semibold text-slate-700 mb-4">Employee Directory</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="staff-grid"></div>
+          </div>
+        </section>
 
-    </main>
+        <!-- REPORTS -->
+        <section id="view-reports" class="view-section space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-red-500" onclick="showToast('Generating Daily Revenue Report...')"><div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-file-pdf text-red-500 text-xl"></i><h4 class="font-semibold">Daily Revenue</h4></div><p class="text-xs text-slate-500">Export PDF/Excel with M-Pesa breakdowns.</p></div>
+            <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-blue-500" onclick="showToast('Generating Occupancy Report...')"><div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-chart-line text-blue-500 text-xl"></i><h4 class="font-semibold">Occupancy</h4></div><p class="text-xs text-slate-500">Monthly stay patterns & RevPAR trends.</p></div>
+            <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-yellow-500" onclick="showToast('Generating F&B Report...')"><div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-chart-pie text-yellow-500 text-xl"></i><h4 class="font-semibold">F&B Performance</h4></div><p class="text-xs text-slate-500">Menu popularity, margins, & waste tracking.</p></div>
+            <div class="card p-5 cursor-pointer hover:bg-slate-50 border-l-4 border-green-500" onclick="showToast('Generating Audit Log...')"><div class="flex items-center gap-3 mb-2"><i class="fa-solid fa-file-shield text-green-500 text-xl"></i><h4 class="font-semibold">Audit Log</h4></div><p class="text-xs text-slate-500">System security events & data changes.</p></div>
+          </div>
+          <div class="card p-6">
+            <h3 class="font-semibold text-slate-700 mb-4">Automated Report Scheduler</h3>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 cursor-pointer"><input type="checkbox" checked class="accent-yellow-500"> Daily Email Summary</label>
+              <label class="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 cursor-pointer"><input type="checkbox" checked class="accent-yellow-500"> Weekly Inventory Alert</label>
+              <button class="btn-secondary px-4 py-2 rounded-lg text-sm ml-auto">Save Schedule</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view-section space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card p-6">
+              <h3 class="font-semibold text-slate-700 mb-4">System Configuration</h3>
+              <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">Guest Portal QR Ordering</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">Auto-assign HK on Checkout</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg"><span class="text-sm text-slate-600">M-Pesa Auto-Reconciliation</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
+              </div>
+            </div>
+            <div class="card p-6">
+              <h3 class="font-semibold text-slate-700 mb-4">Role-Based Access (RBAC)</h3>
+              <div class="space-y-3">
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between"><div><p class="font-medium text-sm">Branch Manager</p><p class="text-xs text-slate-500">Full System Access</p></div><span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">Active</span></div>
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between"><div><p class="font-medium text-sm">Front Desk</p><p class="text-xs text-slate-500">Rooms, Guests, Folios</p></div><span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">Active</span></div>
+                <button onclick="showToast('RBAC configuration saved successfully')" class="btn-secondary w-full py-2.5 rounded-lg text-sm font-semibold mt-2">Update Permissions</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
   </div>
 
   <!-- MODALS -->
-  <!-- Check-In Modal -->
-  <div id="checkin-modal" class="modal-overlay">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 transform transition-all">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">New Check-In</h3>
-        <button onclick="closeModal('checkin-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
-      </div>
+  <div id="checkin-modal" class="modal-backdrop">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+      <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-slate-800">New Check-In</h3><button onclick="closeModal('checkin-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div>
       <form onsubmit="processCheckIn(event)" class="space-y-4">
         <div><label class="block text-xs font-medium text-slate-500 mb-1">Room Number</label><input type="text" id="checkin-room" placeholder="e.g. 104" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none" required></div>
         <div><label class="block text-xs font-medium text-slate-500 mb-1">Guest Name</label><input type="text" id="checkin-guest" placeholder="Full Name" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none" required></div>
@@ -423,240 +383,300 @@
           <div><label class="block text-xs font-medium text-slate-500 mb-1">Check-Out</label><input type="date" id="checkin-out" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none" required></div>
           <div><label class="block text-xs font-medium text-slate-500 mb-1">ID / Passport</label><input type="text" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-yellow-500 focus:outline-none" placeholder="Last 4 digits"></div>
         </div>
-        <button type="submit" class="w-full btn-primary py-2.5 rounded-lg font-semibold mt-2 shadow-md">Complete Check-In</button>
+        <button type="submit" class="w-full btn-gold py-2.5 rounded-lg font-semibold mt-2">Complete Check-In</button>
       </form>
     </div>
   </div>
 
-  <!-- PO Modal -->
-  <div id="po-modal" class="modal-overlay">
+  <div id="po-modal" class="modal-backdrop">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-bold text-slate-800">Generate Purchase Order</h3>
-        <button onclick="closeModal('po-modal')" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-xl"></i></button>
-      </div>
+      <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-slate-800">Generate Purchase Order</h3><button onclick="closeModal('po-modal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button></div>
       <form onsubmit="submitPO(event)" class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-medium text-slate-500 mb-1">Supplier</label><select class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><option>Global Linens Co.</option><option>Nairobi Fresh Foods</option><option>CleanPro Supplies Kenya</option></select></div>
+          <div><label class="block text-xs font-medium text-slate-500 mb-1">Supplier</label><select class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"><option>Nairobi Fresh Foods</option><option>Global Linens Co.</option><option>CleanPro Supplies</option></select></div>
           <div><label class="block text-xs font-medium text-slate-500 mb-1">Delivery Date</label><input type="date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" required></div>
         </div>
-        <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800">
-          <i class="fa-solid fa-triangle-exclamation mr-1"></i> Auto-populated based on low-stock alerts. Review quantities before sending.
-        </div>
         <textarea placeholder="Additional Notes..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm h-20 resize-none focus:outline-none"></textarea>
-        <button type="submit" class="w-full btn-primary py-2.5 rounded-lg font-semibold mt-2 shadow-md">Approve & Send to Supplier</button>
+        <button type="submit" class="w-full btn-gold py-2.5 rounded-lg font-semibold">Approve & Send</button>
       </form>
     </div>
   </div>
 
-  <!-- Toast -->
   <div id="toast-container" class="toast"><i class="fa-solid fa-circle-check text-green-400 text-lg"></i><span id="toast-msg"></span></div>
 
-  <script type="module">
+  <script>
     // --- DATA ---
-    import { supabase } from '../supabaseClient.js';
-    const roomsData = [
-      { id: '101', type: 'Deluxe Suite', guest: 'Alice Johnson', checkout: '2026-05-12', status: 'occupied', rate: 25000 },
-      { id: '102', type: 'Executive Room', guest: '', checkout: '', status: 'dirty', rate: 18000 },
-      { id: '103', type: 'Standard Double', guest: 'Michael Chen', checkout: '2026-05-09', status: 'occupied', rate: 12000 },
-      { id: '104', type: 'Presidential Penthouse', guest: 'Sarah Williams', checkout: '2026-05-15', status: 'occupied', rate: 45000 },
-      { id: '105', type: 'Standard Twin', guest: '', checkout: '', status: 'vacant', rate: 12000 },
-      { id: '201', type: 'Executive Room', guest: 'David Kimani', checkout: '2026-05-08', status: 'occupied', rate: 18000 },
-      { id: '202', type: 'Deluxe Suite', guest: '', checkout: '', status: 'cleaning', rate: 25000 },
-      { id: '203', type: 'Family Suite', guest: '', checkout: '', status: 'vacant', rate: 28000 },
-      { id: '301', type: 'Presidential Penthouse', guest: 'Robert Smith', checkout: '2026-05-15', status: 'occupied', rate: 45000 },
-      { id: '302', type: 'Standard Twin', guest: '', checkout: '', status: 'maintenance', rate: 12000 },
+    const rooms = [
+      { id: '101', type: 'Deluxe Suite', guest: 'Alice Johnson', checkout: '2026-05-12', status: 'occupied' },
+      { id: '102', type: 'Executive Room', guest: '', checkout: '', status: 'dirty' },
+      { id: '103', type: 'Standard Double', guest: 'Michael Chen', checkout: '2026-05-09', status: 'occupied' },
+      { id: '104', type: 'Presidential', guest: 'Sarah Williams', checkout: '2026-05-15', status: 'occupied' },
+      { id: '105', type: 'Standard Twin', guest: '', checkout: '', status: 'vacant' },
+      { id: '202', type: 'Deluxe Suite', guest: '', checkout: '', status: 'cleaning' }
     ];
 
-    const hkData = [
+    const hkTasks = [
       { room: '102', priority: 'High', status: 'pending', staff: '', type: 'Full Clean' },
       { room: '202', priority: 'Medium', status: 'in-progress', staff: 'Jane Doe', type: 'Turn-down' },
-      { room: '302', priority: 'High', status: 'pending', staff: '', type: 'Deep Clean' },
-      { room: '105', priority: 'Low', status: 'pending', staff: '', type: 'Quick Refresh' }
+      { room: '302', priority: 'High', status: 'pending', staff: '', type: 'Deep Clean' }
     ];
 
-    const fbData = [
-      { id: 'ORD-8821', location: 'Room 104', items: 'Grilled Tilapia, Dawa Cocktail', time: '18:45', status: 'preparing', amount: 2700 },
-      { id: 'ORD-8822', location: 'Room 201', items: 'Nyama Choma Platter, Pilau', time: '19:10', status: 'pending', amount: 3700 },
-      { id: 'ORD-8823', location: 'Table 5', items: 'Caesar Salad, House Red Wine', time: '18:30', status: 'ready', amount: 4200 },
-      { id: 'ORD-8824', location: 'Room 301', items: 'Chocolate Fondant, Artisan Coffee', time: '17:50', status: 'served', amount: 1750 }
+    const fbOrders = [
+      { id: 'ORD-8821', location: 'Room 104', items: 'Grilled Tilapia, Dawa', time: '18:45', status: 'preparing', amount: 2700 },
+      { id: 'ORD-8822', location: 'Room 201', items: 'Nyama Choma Platter', time: '19:10', status: 'pending', amount: 3700 },
+      { id: 'ORD-8823', location: 'Table 5', items: 'Caesar Salad, Red Wine', time: '18:30', status: 'ready', amount: 4200 }
     ];
 
-    const invData = [
+    const inventoryItems = [
       { name: 'Bath Towels (Large)', cat: 'Linens', stock: 45, min: 50, status: 'Low' },
       { name: 'Tilapia Fillet (kg)', cat: 'F&B', stock: 12, min: 15, status: 'Low' },
-      { name: 'Premium Shampoo (50ml)', cat: 'Amenities', stock: 80, min: 40, status: 'OK' },
-      { name: 'Bleach (5L)', cat: 'Cleaning', stock: 12, min: 8, status: 'OK' },
-      { name: 'Red Wine (House 750ml)', cat: 'Bar', stock: 4, min: 25, status: 'Critical' },
-      { name: 'M-Pesa Receipt Paper', cat: 'Admin', stock: 3, min: 10, status: 'Critical' }
+      { name: 'Premium Shampoo', cat: 'Amenities', stock: 80, min: 40, status: 'OK' },
+      { name: 'Red Wine (House)', cat: 'Bar', stock: 4, min: 25, status: 'Critical' }
     ];
 
-    const staffData = [
-      { name: 'Jane Doe', role: 'Head Housekeeper', shift: '08:00 - 16:00', dept: 'HK', img: 'https://ui-avatars.com/api/?name=Jane+Doe&background=random' },
-      { name: 'Mike Ross', role: 'Sous Chef', shift: '14:00 - 22:00', dept: 'F&B', img: 'https://ui-avatars.com/api/?name=Mike+Ross&background=random' },
-      { name: 'Sarah Lin', role: 'Front Desk Lead', shift: '07:00 - 15:00', dept: 'Reception', img: 'https://ui-avatars.com/api/?name=Sarah+Lin&background=random' },
-      { name: 'David Kim', role: 'Bartender', shift: '16:00 - 00:00', dept: 'F&B', img: 'https://ui-avatars.com/api/?name=David+Kim&background=random' }
+    const staffMembers = [
+      { name: 'Jane Doe', role: 'Head Housekeeper', shift: '08:00 - 16:00', dept: 'HK', img: 'https://ui-avatars.com/api/?name=Jane+Doe' },
+      { name: 'Mike Ross', role: 'Sous Chef', shift: '14:00 - 22:00', dept: 'F&B', img: 'https://ui-avatars.com/api/?name=Mike+Ross' },
+      { name: 'Sarah Lin', role: 'Front Desk Lead', shift: '07:00 - 15:00', dept: 'Reception', img: 'https://ui-avatars.com/api/?name=Sarah+Lin' }
     ];
 
-    const activityLog = [
+    const activityLogs = [
       { time: '19:15', source: 'Guest Portal', act: 'Booking confirmed for Room 105', stat: 'Success' },
       { time: '18:50', source: 'Housekeeping', act: 'Room 202 status updated', stat: 'Completed' },
-      { time: '18:30', source: 'Virtual Waiter', act: 'New order placed from Table 5', stat: 'Processed' },
-      { time: '17:45', source: 'Inventory', act: 'Low-stock alert triggered (Red Wine)', stat: 'Alert' }
+      { time: '18:30', source: 'Virtual Waiter', act: 'New order placed from Table 5', stat: 'Processed' }
     ];
 
+    // --- CORE LOGIC ---
+    let revChartInst = null, roomChartInst = null;
+
+    function handleLogin(e) {
+      e.preventDefault();
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('admin-panel').classList.remove('hidden');
+      document.getElementById('admin-panel').style.display = 'flex';
+      showToast('Welcome back, Branch Manager!');
+      navigate('dashboard');
+    }
+
+    function handleLogout() {
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('login-page').style.display = 'flex';
+    }
+
+    let currentView = 'dashboard';
+
+    function navigate(view) {
+      currentView = view;
+
+      document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.style.display = 'none';
+      });
+
+      const target = document.getElementById('view-' + view);
+      if (target) {
+        target.style.display = 'block';
+        setTimeout(() => target.classList.add('active'), 20);
+      }
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.querySelector('.nav-btn[onclick="navigate(\'' + view + '\')"]');
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const titles = {
+        dashboard: 'Executive Dashboard',
+        'front-desk': 'Front Desk & Rooms',
+        housekeeping: 'Housekeeping Management',
+        fb: 'Virtual Waiter Orders',
+        inventory: 'Inventory & Procurement',
+        hr: 'HR & Payroll',
+        reports: 'Reports & Analytics',
+        settings: 'System Settings'
+      };
+      document.getElementById('page-title').textContent = titles[view] || 'Dashboard';
+
+      renderView(view);
+    }
+
+    function renderView(view) {
+      switch (view) {
+        case 'dashboard': renderDashboard(); break;
+        case 'front-desk': renderFrontDesk(); break;
+        case 'housekeeping': renderHousekeeping(); break;
+        case 'fb': renderFbOrders(); break;
+        case 'inventory': renderInventory(); break;
+        case 'hr': renderHR(); break;
+      }
+    }
+
     // --- RENDERERS ---
-    function renderRooms() {
-      document.getElementById('rooms-table-body').innerHTML = roomsData.map(r => {
-        const statusClass = `status-${r.status}`;
-        const actions = r.status === 'occupied' ? `
-          <button onclick="viewFolio('${r.id}')" class="text-blue-600 hover:underline text-xs font-medium mr-2">View Folio</button>
-          <button onclick="processCheckOut('${r.id}')" class="text-red-500 hover:underline text-xs font-medium">Check-Out</button>` : 
-          r.status === 'vacant' ? `<button onclick="openModal('checkin-modal'); document.getElementById('checkin-room').value='${r.id}'" class="text-green-600 hover:underline text-xs font-medium">Check-In</button>` : 
-          `<span class="text-slate-400 text-xs">--</span>`;
-        return `<tr class="hover:bg-slate-50 transition border-b border-slate-100">
-          <td class="px-4 py-3 font-bold text-slate-800">${r.id}</td>
-          <td class="px-4 py-3 text-slate-600">${r.type}</td>
-          <td class="px-4 py-3 font-medium">${r.guest || '<span class="text-slate-400 italic">Vacant</span>'}</td>
-          <td class="px-4 py-3 font-mono text-xs text-slate-600">${r.checkout || '-'}</td>
-          <td class="px-4 py-3 font-bold text-slate-800">Ksh 0</td>
-          <td class="px-4 py-3"><span class="status-badge ${statusClass}">${r.status}</span></td>
-          <td class="px-4 py-3 text-right whitespace-nowrap">${actions}</td>
-        </tr>`;
-      }).join('');
+    function renderDashboard() {
+      document.getElementById('activity-log-body').innerHTML = activityLogs.map(a => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-mono text-xs">${a.time}</td>
+          <td class="px-4 py-3">${a.source}</td>
+          <td class="px-4 py-3 font-medium">${a.act}</td>
+          <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${a.stat === 'Success' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${a.stat}</span></td>
+        </tr>
+      `).join('');
+      renderCharts();
+    }
+
+    function renderFrontDesk() {
+      document.getElementById('rooms-table-body').innerHTML = rooms.map(r => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="px-4 py-3 font-bold">${r.id}</td>
+          <td class="px-4 py-3">${r.type}</td>
+          <td class="px-4 py-3 font-medium">${r.guest || '<span class="text-slate-400">Vacant</span>'}</td>
+          <td class="px-4 py-3 font-mono text-xs">${r.checkout || '-'}</td>
+          <td class="px-4 py-3"><span class="status-badge status-${r.status}">${r.status}</span></td>
+          <td class="px-4 py-3 text-right whitespace-nowrap">
+            ${r.status === 'occupied'
+              ? `<button class="text-blue-600 hover:underline text-xs mr-2">Folio</button><button onclick="processCheckOut('${r.id}')" class="text-red-500 hover:underline text-xs">Check-Out</button>`
+              : `<button onclick="openModal('checkin-modal'); document.getElementById('checkin-room').value='${r.id}'" class="text-green-600 hover:underline text-xs">Check-In</button>`
+            }
+          </td>
+        </tr>
+      `).join('');
     }
 
     function renderHousekeeping() {
-      document.getElementById('hk-high').textContent = hkData.filter(h => h.priority === 'High').length;
-      document.getElementById('hk-med').textContent = hkData.filter(h => h.priority === 'Medium').length;
-      document.getElementById('hk-done').textContent = hkData.filter(h => h.status === 'completed').length;
+      document.getElementById('hk-high').textContent = hkTasks.filter(h => h.priority === 'High').length;
+      document.getElementById('hk-med').textContent = hkTasks.filter(h => h.priority === 'Medium').length;
+      document.getElementById('hk-done').textContent = hkTasks.filter(h => h.status === 'completed').length;
 
-      document.getElementById('housekeeping-grid').innerHTML = hkData.map(h => `
-        <div class="card p-5 border-l-4 ${h.priority==='High'?'border-rose-500':h.priority==='Medium'?'border-yellow-500':'border-blue-400'}">
-          <div class="flex justify-between items-start mb-3">
-            <div class="bg-slate-100 px-3 py-1 rounded-lg font-bold text-slate-700">Rm ${h.room}</div>
-            <span class="text-xs px-2 py-1 rounded-full ${h.status==='completed'?'bg-green-100 text-green-700':h.status==='in-progress'?'bg-indigo-100 text-indigo-700':'bg-yellow-100 text-yellow-700'} font-medium uppercase">${h.status.replace('-',' ')}</span>
+      document.getElementById('housekeeping-grid').innerHTML = hkTasks.map(h => `
+        <div class="card p-5 border-l-4 ${h.priority === 'High' ? 'border-rose-500' : 'border-yellow-500'}">
+          <div class="flex justify-between mb-3">
+            <div class="font-bold">Rm ${h.room}</div>
+            <span class="text-xs px-2 py-1 rounded-full ${h.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">${h.status}</span>
           </div>
-          <p class="text-sm font-medium text-slate-700 mb-1">${h.type}</p>
-          <p class="text-xs text-slate-500 mb-4">Assigned: ${h.staff || 'Unassigned'}</p>
-          <button onclick="updateHkStatus('${h.room}')" class="w-full py-2 rounded-lg text-sm font-semibold border ${h.status==='completed'?'border-green-200 bg-green-50 text-green-700':'border-slate-200 hover:bg-slate-50'} transition">${h.status==='completed'?'Verified Clean' : h.status==='in-progress'?'Mark Complete' : 'Start Task'}</button>
+          <p class="text-sm font-medium mb-1">${h.type}</p>
+          <p class="text-xs text-slate-500 mb-4">${h.staff || 'Unassigned'}</p>
+          <button onclick="updateHkStatus('${h.room}')" class="w-full py-2 rounded-lg text-sm font-semibold border border-slate-200 hover:bg-slate-50 transition">
+            ${h.status === 'pending' ? 'Start' : 'Mark Complete'}
+          </button>
         </div>
       `).join('');
     }
 
     function renderFbOrders() {
-      document.getElementById('fb-orders-grid').innerHTML = fbData.map(f => {
-        let statusColor = `status-${f.status}`;
-        let nextBtn = '';
-        if(f.status==='pending') nextBtn = `<button onclick="updateFbStatus('${f.id}','preparing')" class="btn-primary w-full py-2 rounded-lg text-sm font-semibold shadow-md">Start Preparing</button>`;
-        else if(f.status==='preparing') nextBtn = `<button onclick="updateFbStatus('${f.id}','ready')" class="w-full py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition shadow-md">Mark Ready</button>`;
-        else if(f.status==='ready') nextBtn = `<button onclick="updateFbStatus('${f.id}','served')" class="w-full py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition shadow-md">Confirm Served</button>`;
-        else nextBtn = `<button class="w-full py-2 rounded-lg text-sm font-semibold bg-slate-200 text-slate-500 cursor-not-allowed">Completed</button>`;
-        
-        return `<div class="card p-5 border-t-4 ${f.status==='pending'?'border-yellow-400':f.status==='preparing'?'border-indigo-400':f.status==='ready'?'border-green-400':'border-slate-300'}">
-          <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-slate-800">${f.location}</h4><span class="text-xs font-mono text-slate-400">${f.time}</span></div>
-          <p class="text-sm text-slate-600 mb-3 min-h-[2.5rem] font-medium">${f.items}</p>
-          <div class="flex justify-between items-center mb-3"><span class="status-badge ${statusColor}">${f.status}</span><span class="text-xs text-slate-400 font-bold">Ksh ${f.amount.toLocaleString()}</span></div>
-          ${nextBtn}
-        </div>`;
+      document.getElementById('fb-orders-grid').innerHTML = fbOrders.map(f => {
+        let btn = '';
+        if (f.status === 'pending') btn = `<button onclick="updateFbStatus('${f.id}','preparing')" class="btn-gold w-full py-2 rounded-lg text-sm font-semibold">Start Preparing</button>`;
+        else if (f.status === 'preparing') btn = `<button onclick="updateFbStatus('${f.id}','ready')" class="w-full py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white">Mark Ready</button>`;
+        else if (f.status === 'ready') btn = `<button onclick="updateFbStatus('${f.id}','served')" class="w-full py-2 rounded-lg text-sm font-semibold bg-green-600 text-white">Confirm Served</button>`;
+        else btn = `<button disabled class="w-full py-2 rounded-lg text-sm font-semibold bg-slate-200 text-slate-500">Completed</button>`;
+        return `
+          <div class="card p-5 border-t-4 ${f.status === 'pending' ? 'border-yellow-400' : f.status === 'preparing' ? 'border-indigo-400' : 'border-green-400'}">
+            <h4 class="font-bold">${f.location}</h4>
+            <p class="text-sm my-2">${f.items}</p>
+            <div class="flex justify-between text-xs mb-3">
+              <span class="status-badge status-${f.status}">${f.status}</span>
+              <span class="font-bold">Ksh ${f.amount.toLocaleString()}</span>
+            </div>
+            ${btn}
+          </div>`;
       }).join('');
     }
 
     function renderInventory() {
-      document.getElementById('inventory-table-body').innerHTML = invData.map(i => {
-        let statusClass = i.status==='OK'?'text-green-600 bg-green-50':i.status==='Low'?'text-yellow-600 bg-yellow-50':'text-red-600 bg-red-50 font-bold';
-        let sClass = `status-${i.status.toLowerCase()}`;
-        return `<tr class="hover:bg-slate-50 transition border-b border-slate-100"><td class="px-4 py-3 font-medium">${i.name}</td><td class="px-4 py-3 text-slate-500">${i.cat}</td><td class="px-4 py-3">${i.stock}</td><td class="px-4 py-3 text-slate-500">${i.min}</td><td class="px-4 py-3"><span class="status-badge ${sClass}">${i.status}</span></td><td class="px-4 py-3 text-right"><button onclick="showToast('Reorder request sent to supplier')" class="text-xs text-blue-600 hover:underline font-medium">Reorder</button></td></tr>`;
-      }).join('');
+      document.getElementById('inventory-table-body').innerHTML = inventoryItems.map(i => `
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 font-medium">${i.name}</td>
+          <td class="px-4 py-3">${i.cat}</td>
+          <td class="px-4 py-3">${i.stock}</td>
+          <td class="px-4 py-3">${i.min}</td>
+          <td class="px-4 py-3"><span class="status-badge status-${i.status.toLowerCase()}">${i.status}</span></td>
+          <td class="px-4 py-3 text-right"><button onclick="showToast('Reorder request sent')" class="text-blue-600 hover:underline text-xs">Reorder</button></td>
+        </tr>
+      `).join('');
     }
 
     function renderHR() {
-      document.getElementById('staff-schedule-list').innerHTML = staffData.map(s => `
-        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:bg-slate-100 transition">
-          <div class="flex items-center gap-3"><img src="${s.img}" class="w-8 h-8 rounded-full"><div><p class="font-medium text-sm text-slate-800">${s.name}</p><p class="text-xs text-slate-500">${s.dept} | ${s.shift}</p></div></div>
+      document.getElementById('staff-schedule-list').innerHTML = staffMembers.map(s => `
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+          <div class="flex items-center gap-3">
+            <img src="${s.img}" class="w-8 h-8 rounded-full">
+            <div><p class="font-medium text-sm">${s.name}</p><p class="text-xs text-slate-500">${s.dept} | ${s.shift}</p></div>
+          </div>
           <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">On Duty</span>
         </div>
       `).join('');
-      document.getElementById('staff-grid').innerHTML = staffData.map(s => `
-        <div class="p-4 bg-white rounded-xl border border-slate-100 text-center hover:shadow-md transition">
-          <img src="${s.img}" class="w-16 h-16 rounded-full mx-auto mb-3 border-2 border-white shadow-sm">
-          <p class="font-semibold text-slate-800 text-sm">${s.name}</p><p class="text-xs text-slate-500 mb-3">${s.role}</p>
-          <div class="flex gap-2 justify-center"><button class="px-3 py-1 rounded bg-slate-100 text-xs hover:bg-slate-200 transition">Profile</button><button class="px-3 py-1 rounded bg-blue-50 text-blue-600 text-xs hover:bg-blue-100 transition">Message</button></div>
+
+      document.getElementById('staff-grid').innerHTML = staffMembers.map(s => `
+        <div class="p-4 bg-white rounded-xl border text-center hover:shadow-md">
+          <img src="${s.img}" class="w-12 h-12 rounded-full mx-auto mb-2">
+          <p class="font-bold text-sm">${s.name}</p>
+          <p class="text-xs text-slate-500 mb-2">${s.role}</p>
+          <div class="flex gap-2 justify-center">
+            <button class="px-2 py-1 bg-slate-100 rounded text-xs">Profile</button>
+            <button class="px-2 py-1 bg-blue-50 text-blue-600 rounded text-xs">Msg</button>
+          </div>
         </div>
       `).join('');
     }
 
-    function renderDashboard() {
-      document.getElementById('activity-log-body').innerHTML = activityLog.map(a => `
-        <tr class="hover:bg-slate-50"><td class="px-4 py-3 font-mono text-xs text-slate-500">${a.time}</td><td class="px-4 py-3 text-slate-600 font-medium">${a.source}</td><td class="px-4 py-3 font-medium">${a.act}</td><td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${a.stat==='Success'?'bg-green-100 text-green-700':a.stat==='Completed'?'bg-blue-100 text-blue-700':'bg-yellow-100 text-yellow-700'}">${a.stat}</span></td></tr>
-      `).join('');
-    }
+    // --- CHARTS (FIXED) ---
+    function renderCharts() {
+      if (revChartInst) return;
 
-    // --- CHARTS ---
-    let revChartInst = null, roomChartInst = null;
-    function initCharts() {
       const ctx1 = document.getElementById('revenueChart').getContext('2d');
       revChartInst = new Chart(ctx1, {
         type: 'line',
-         {
+        data: {
           labels: ['01', '05', '10', '15', '20', '25', '30'],
-          datasets: [{ label: 'Revenue (Ksh)',  [180000, 210000, 195000, 240000, 225000, 280000, 284500], borderColor: '#c9a227', backgroundColor: 'rgba(201, 162, 39, 0.1)', fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 6 }]
+          datasets: [{
+            label: 'Revenue (Ksh)',
+            data: [180000, 210000, 195000, 240000, 225000, 280000, 284500],
+            borderColor: '#c9a227',
+            backgroundColor: 'rgba(201,162,39,0.1)',
+            fill: true,
+            tension: 0.4
+          }]
         },
-        options: { responsive: true, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { grid: { borderDash: [4, 4], drawBorder: false }, beginAtZero: false }, x: { grid: { display: false } } } }
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { grid: { display: false } },
+            x: { grid: { display: false } }
+          }
+        }
       });
 
       const ctx2 = document.getElementById('roomStatusChart').getContext('2d');
       roomChartInst = new Chart(ctx2, {
         type: 'doughnut',
-         {
-          labels: ['Occupied', 'Vacant', 'Dirty', 'Maintenance'],
-          datasets: [{  [45, 12, 3, 2], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
+        data: {
+          labels: ['Occupied', 'Vacant', 'Dirty'],
+          datasets: [{
+            data: [45, 12, 3],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+            borderWidth: 0
+          }]
         },
-        options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 11 } } } } }
+        options: {
+          responsive: true,
+          cutout: '70%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { usePointStyle: true, padding: 20 }
+            }
+          }
+        }
       });
     }
 
-    // --- NAVIGATION & UTILS ---
-    let currentView = 'dashboard';
-
-    function navigate(view) {
-      currentView = view;
-      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-      document.getElementById(`view-${view}`).classList.add('active');
-      
-      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-      const activeBtn = document.querySelector(`.nav-link[onclick="navigate('${view}')"]`);
-      if(activeBtn) activeBtn.classList.add('active');
-
-      const titles = { 
-        dashboard: 'Executive Dashboard', 
-        'front-desk': 'Front Desk & Room Inventory', 
-        housekeeping: 'Housekeeping Management', 
-        fb: 'F&B / Virtual Waiter Queue', 
-        inventory: 'Inventory & Procurement', 
-        hr: 'HR, Scheduling & Payroll', 
-        reports: 'Reports & Analytics', 
-        settings: 'System Settings & RBAC' 
-      };
-      document.getElementById('page-title').textContent = titles[view];
-      
-      renderView(view);
-      if(window.innerWidth < 1024) document.getElementById('main-sidebar').classList.add('w-20');
-    }
-
-    function renderView(view) {
-      if(view === 'front-desk') renderRooms();
-      else if(view === 'housekeeping') renderHousekeeping();
-      else if(view === 'fb') renderFbOrders();
-      else if(view === 'inventory') renderInventory();
-      else if(view === 'hr') renderHR();
-      else if(view === 'dashboard') renderDashboard();
-    }
-
+    // --- UTILS ---
     function toggleSidebar() {
-      const sb = document.getElementById('main-sidebar');
-      sb.classList.toggle('w-20');
-      document.querySelectorAll('.nav-text').forEach(el => el.style.display = sb.classList.contains('w-20') ? 'none' : 'inline');
+      const sb = document.getElementById('sidebar');
+      if (window.innerWidth < 1024) {
+        sb.classList.toggle('-translate-x-full');
+      } else {
+        sb.classList.toggle('collapsed');
+      }
     }
 
     function openModal(id) { document.getElementById(id).classList.add('show'); }
@@ -669,70 +689,72 @@
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
+    // --- ACTIONS ---
     function processCheckIn(e) {
       e.preventDefault();
       const rId = document.getElementById('checkin-room').value;
-      const rObj = roomsData.find(r => r.id === rId);
-      if(rObj && rObj.status !== 'vacant') { showToast(`Room ${rId} is not vacant. Status: ${rObj.status}`); return; }
-      if(rObj) { rObj.status = 'occupied'; rObj.guest = document.getElementById('checkin-guest').value; rObj.checkout = document.getElementById('checkin-out').value; }
-      showToast(`Successfully checked in ${document.getElementById('checkin-guest').value} to Room ${rId}`);
+      const rObj = rooms.find(r => r.id === rId);
+      if (rObj) {
+        rObj.status = 'occupied';
+        rObj.guest = document.getElementById('checkin-guest').value;
+        rObj.checkout = document.getElementById('checkin-out').value;
+      }
+      showToast('Checked in guest to Room ' + rId);
       closeModal('checkin-modal');
-      navigate('front-desk');
+      renderFrontDesk();
     }
 
     function processCheckOut(rId) {
-      if(confirm(`Check out room ${rId}? This will set status to 'Dirty' and notify housekeeping.`)) {
-        const rObj = roomsData.find(r => r.id === rId);
-        if(rObj) { rObj.status = 'dirty'; rObj.guest = ''; rObj.checkout = ''; }
-        showToast(`Room ${rId} checked out successfully. HK task created.`);
-        navigate('front-desk');
+      if (confirm('Check out Room ' + rId + '?')) {
+        const rObj = rooms.find(r => r.id === rId);
+        if (rObj) { rObj.status = 'dirty'; rObj.guest = ''; rObj.checkout = ''; }
+        showToast('Room ' + rId + ' checked out. HK notified.');
+        renderFrontDesk();
       }
     }
 
     function updateHkStatus(rId) {
-      const hObj = hkData.find(h => h.room === rId);
-      if(hObj) {
-        if(hObj.status === 'pending') { hObj.status = 'in-progress'; hObj.staff = 'Current User'; showToast(`Cleaning started for Room ${rId}`); }
-        else if(hObj.status === 'in-progress') { hObj.status = 'completed'; showToast(`Room ${rId} marked Clean & Verified`); setTimeout(()=>{ roomsData.find(r=>r.id===rId).status='vacant'; }, 1000); }
-      }
-      navigate('housekeeping');
+      const hObj = hkTasks.find(h => h.room === rId);
+      if (hObj) hObj.status = hObj.status === 'pending' ? 'in-progress' : 'completed';
+      showToast('Task for Room ' + rId + ' updated');
+      renderHousekeeping();
     }
 
     function updateFbStatus(oId, status) {
-      const fObj = fbData.find(f => f.id === oId);
-      if(fObj) { fObj.status = status; showToast(`Order ${oId} updated to ${status}`); }
-      navigate('fb');
+      const fObj = fbOrders.find(f => f.id === oId);
+      if (fObj) fObj.status = status;
+      showToast('Order ' + oId + ' updated to ' + status);
+      renderFbOrders();
     }
 
     function autoAssignTasks() {
-      hkData.forEach(h => { if(h.status === 'pending' && !h.staff) h.staff = 'Auto-Assigned Staff'; });
-      showToast('Pending tasks auto-assigned based on priority & workload');
-      navigate('housekeeping');
+      hkTasks.forEach(h => { if (h.status === 'pending') h.staff = 'Auto-Assigned'; });
+      showToast('Tasks auto-assigned');
+      renderHousekeeping();
     }
 
     function submitPO(e) {
       e.preventDefault();
-      showToast('Purchase Order #PO-9942 generated and emailed to supplier.');
+      showToast('Purchase Order sent to supplier');
       closeModal('po-modal');
-      navigate('inventory');
-    }
-
-    function viewFolio(rId) {
-      showToast(`Opening folio for Room ${rId}...`);
     }
 
     // --- INIT ---
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-      setInterval(() => { document.getElementById('live-clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }); }, 1000);
-      initCharts();
-      navigate('dashboard');
-    });
+      const clockEl = document.getElementById('live-clock');
+      const updateClock = () => {
+        clockEl.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      };
+      updateClock();
+      setInterval(updateClock, 60000);
 
-    document.querySelectorAll('.modal-overlay').forEach(modal => {
-      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal.id); });
+      document.querySelectorAll('.modal-backdrop').forEach(m => {
+        m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+      });
+
+      // Render dashboard on load
+      renderDashboard();
     });
   </script>
 </body>
 </html>
-
