@@ -423,12 +423,10 @@
 
   <script>
     // --- Supabase Client ---
-    const { createClient } = supabase;
-    const _supabase = createClient(
+    const db = supabase.createClient(
       'https://neknhnxwcmcxwdqrwdta.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5la25obnh3Y21jeHdkcXJ3ZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzcwNjYsImV4cCI6MjA5Mzc1MzA2Nn0.tHNjfKhtf0i7p0O9j-GviJVJrFL6f1bfW44_i48dC4Y'
     );
-    const supabase = _supabase;
 
     // --- Data ---
     const rooms = [
@@ -639,7 +637,7 @@
         return;
       }
       const total = cart.reduce((sum, i) => sum + i.price, 0) * 1.1;
-      const { error } = await supabase.from('orders').insert({
+      const { error } = await db.from('orders').insert({
         items: JSON.stringify(cart.map(i => ({ id: i.id, name: i.name, price: i.price }))),
         total: Math.round(total),
         status: 'pending',
@@ -663,7 +661,7 @@
       const email = inputs[1].value;
       const text = inputs[3].value;
       const rating = document.querySelectorAll('#star-rating i.text-gold').length || 5;
-      const { error } = await supabase.from('reviews').insert({
+      const { error } = await db.from('reviews').insert({
         name, email, rating, text,
         date: new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
         created_at: new Date().toISOString()
@@ -683,7 +681,7 @@
     async function submitContact(e) {
       e.preventDefault();
       const inputs = e.target.querySelectorAll('input, textarea');
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await db.from('contact_messages').insert({
         name: inputs[0].value,
         email: inputs[1].value,
         message: inputs[2].value,
@@ -716,7 +714,7 @@
       btn.textContent = 'Processing...';
       btn.disabled = true;
 
-      const { error } = await supabase.from('bookings').insert({
+      const { error } = await db.from('bookings').insert({
         guest_name: name, email, phone, id_number,
         check_in, check_out, room_type, guests,
         payment_method: payment,
