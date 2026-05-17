@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <title>Makar Hotel | Management Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --gold: #b8952a;
+      --gold-light: #d4aa3a;
+      --gold-pale: #fdf6e3;
+      --navy: #0f172a;
+      --navy-mid: #1e293b;
+      --navy-soft: #334155;
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --border: #e4e1d8;
+      --text: #1a1814;
+      --text-mid: #5c574e;
+      --text-soft: #9b9490;
+      --sidebar-w: 256px;
+    }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+    h1,h2,h3,h4 { font-family: 'DM Serif Display', serif; }
+    code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Sidebar */
+    .sidebar { width: var(--sidebar-w); position: fixed; top: 0; left: 0; height: 100%; z-index: 40; transition: transform 0.3s ease; background: var(--navy); }
+    @media (max-width: 1023px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-wrap { margin-left: 0 !important; }
+    }
+    @media (min-width: 1024px) {
+      .main-wrap { margin-left: var(--sidebar-w); }
+    }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: #94a3b8; cursor: pointer; transition: all 0.15s; border: none; background: none; width: 100%; text-align: left; }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #e2e8f0; }
+    .nav-item.active { background: rgba(184,149,42,0.15); color: var(--gold-light); font-weight: 600; }
+    .nav-item i { width: 18px; text-align: center; font-size: 14px; }
+
+    /* Cards */
+    .card { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); }
+    .stat-card { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); padding: 20px; position: relative; overflow: hidden; }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent, var(--gold)); }
+
+    /* Buttons */
+    .btn-gold { background: var(--gold); color: #fff; border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; transition: all 0.2s; border-radius: 8px; padding: 8px 16px; font-size: 13px; }
+    .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(184,149,42,0.3); }
+    .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-mid); cursor: pointer; font-weight: 500; font-family: 'DM Sans', sans-serif; transition: all 0.15s; border-radius: 8px; padding: 7px 14px; font-size: 13px; }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-danger { background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-weight: 600; font-family: 'DM Sans', sans-serif; transition: all 0.15s; border-radius: 6px; padding: 5px 12px; font-size: 12px; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-blue { background: #dbeafe; color: #1d4ed8; }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-yellow { background: #fef9c3; color: #a16207; }
+    .badge-red { background: #fee2e2; color: #dc2626; }
+    .badge-purple { background: #ede9fe; color: #7c3aed; }
+    .badge-gray { background: #f1f5f9; color: #475569; }
+    .badge-gold { background: var(--gold-pale); color: var(--gold); }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { background: #f8f7f4; padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-soft); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .data-table td { padding: 12px 14px; border-bottom: 1px solid #f0ede7; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: #faf9f6; }
+    .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--border); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; border-radius: 10px; background: var(--navy); color: #fff; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); z-index: 9999; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); max-width: 320px; font-size: 13.5px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* Modal */
+    .modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.55); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+    .modal-bg.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 16px; width: 100%; max-width: 460px; box-shadow: 0 24px 60px rgba(0,0,0,0.18); max-height: 90vh; overflow-y: auto; }
+
+    /* Sections */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Order cards */
+    .order-card { background: var(--surface); border-radius: 14px; border: 1px solid var(--border); padding: 16px; border-top: 4px solid var(--gold); transition: box-shadow 0.2s; }
+    .order-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+    /* Live dot */
+    .live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Overlay */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 35; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .overlay.show { opacity: 1; pointer-events: auto; }
+
+    /* Input */
+    .inp { width: 100%; border: 1.5px solid #e2e0db; border-radius: 8px; padding: 9px 12px; font-size: 13.5px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s; background: #fafaf8; }
+    .inp:focus { border-color: var(--gold); background: #fff; }
+    label.lbl { display: block; font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d4cfc6; border-radius: 99px; }
+
+    /* Loading */
+    .loading-row td { text-align: center; color: var(--text-soft); padding: 32px; font-size: 13px; }
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #e2e0db; border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HK cards */
+    .hk-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 16px; }
+
+    /* Staff card */
+    .staff-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); padding: 16px; text-align: center; transition: box-shadow 0.2s; }
+    .staff-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+    @media (max-width: 640px) {
+      .modal-box { border-radius: 16px 16px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-page" class="fixed inset-0 z-[100] flex items-center justify-center p-4" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);">
+  <div style="position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%, rgba(184,149,42,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(184,149,42,0.05) 0%, transparent 40%);"></div>
+  <div class="w-full max-w-sm relative" style="z-index:1;">
+    <div class="text-center mb-8">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
+        <i class="fa-solid fa-hotel text-white text-xl"></i>
+      </div>
+      <h1 class="text-2xl text-white mb-1" style="font-family:'DM Serif Display',serif;">Makar Hotel</h1>
+      <p class="text-sm" style="color:#64748b;">Management Console</p>
+    </div>
+    <div class="card p-6" style="border-color:rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); backdrop-filter:blur(12px);">
+      <form onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="lbl" style="color:#94a3b8;">Email</label>
+          <input type="email" id="login-email" value="admin@makarhotels.com" class="inp" style="background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); color:#e2e8f0;" required>
+        </div>
+        <div>
+          <label class="lbl" style="color:#94a3b8;">Password</label>
+          <input type="password" id="login-password" value="admin" class="inp" style="background:rgba(255,255,255,0.07); border-color:rgba(255,255,255,0.12); color:#e2e8f0;" required>
+        </div>
+        <button type="submit" class="btn-gold w-full py-3 text-sm mt-2">Sign In to Console</button>
+      </form>
+    </div>
+    <p class="text-center text-xs mt-4" style="color:#475569;">&copy; 2026 Makar Hotel Group</p>
+  </div>
+</div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div id="overlay" class="overlay lg:hidden" onclick="closeSidebar()"></div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel" class="hidden h-screen flex">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar flex flex-col">
+    <div class="flex items-center gap-3 px-5 py-4 border-b" style="border-color:rgba(255,255,255,0.07);">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">
+        <i class="fa-solid fa-hotel text-white text-sm"></i>
+      </div>
+      <div>
+        <p class="text-white font-semibold text-sm leading-tight" style="font-family:'DM Serif Display',serif;">MAKAR</p>
+        <p class="text-xs" style="color:#475569;">Enterprise Console</p>
+      </div>
+      <button onclick="closeSidebar()" class="ml-auto text-slate-500 hover:text-white lg:hidden p-1">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <p class="text-xs font-semibold uppercase tracking-widest px-3 mb-2" style="color:#334155;">Main</p>
+      <button onclick="goTo('dashboard')" class="nav-item active" id="nav-dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+      <button onclick="goTo('bookings')" class="nav-item" id="nav-bookings"><i class="fa-solid fa-calendar-check"></i> Bookings <span id="badge-bookings" class="ml-auto badge badge-gold hidden"></span></button>
+
+      <p class="text-xs font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style="color:#334155;">Operations</p>
+      <button onclick="goTo('front-desk')" class="nav-item" id="nav-front-desk"><i class="fa-solid fa-bell-concierge"></i> Front Desk</button>
+      <button onclick="goTo('orders')" class="nav-item" id="nav-orders"><i class="fa-solid fa-utensils"></i> F&B Orders <span id="badge-orders" class="ml-auto badge badge-yellow hidden"></span></button>
+      <button onclick="goTo('reviews')" class="nav-item" id="nav-reviews"><i class="fa-solid fa-star"></i> Guest Reviews <span id="badge-reviews" class="ml-auto badge badge-blue hidden"></span></button>
+      <button onclick="goTo('messages')" class="nav-item" id="nav-messages"><i class="fa-solid fa-envelope"></i> Messages <span id="badge-messages" class="ml-auto badge badge-red hidden"></span></button>
+      <button onclick="goTo('housekeeping')" class="nav-item" id="nav-housekeeping"><i class="fa-solid fa-broom"></i> Housekeeping</button>
+
+      <p class="text-xs font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style="color:#334155;">Admin</p>
+      <button onclick="goTo('hr')" class="nav-item" id="nav-hr"><i class="fa-solid fa-users"></i> HR & Staff</button>
+      <button onclick="goTo('reports')" class="nav-item" id="nav-reports"><i class="fa-solid fa-file-lines"></i> Reports</button>
+    </nav>
+
+    <div class="p-3 border-t" style="border-color:rgba(255,255,255,0.07);">
+      <div class="flex items-center gap-2 px-3 py-2 mb-2">
+        <span class="live-dot"></span>
+        <span class="text-xs" style="color:#475569;" id="sidebar-clock">--:--</span>
+      </div>
+      <button onclick="handleLogout()" class="nav-item w-full text-left" style="color:#475569;">
+        <i class="fa-solid fa-right-from-bracket"></i> Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-wrap flex-1 flex flex-col h-screen overflow-hidden">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 md:px-6 py-3 border-b bg-white sticky top-0 z-20" style="border-color:var(--border);">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100 text-gray-500 lg:hidden">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <h2 class="font-semibold text-base text-gray-800" id="page-title">Dashboard</h2>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="refreshAll()" class="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 text-gray-400 transition" title="Refresh data">
+          <i class="fa-solid fa-rotate-right text-sm" id="refresh-icon"></i>
+        </button>
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style="background:var(--gold);">BM</div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-6" style="background:var(--bg);">
+
+      <!-- DASHBOARD -->
+      <section id="view-dashboard" class="view active space-y-5">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div class="stat-card" style="--accent:#3b82f6;">
+            <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--text-soft);">Total Bookings</p>
+            <p class="text-2xl font-bold" id="stat-bookings">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);" id="stat-bookings-sub">Loading...</p>
+          </div>
+          <div class="stat-card" style="--accent:var(--gold);">
+            <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--text-soft);">Total Revenue</p>
+            <p class="text-2xl font-bold" id="stat-revenue">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">from bookings</p>
+          </div>
+          <div class="stat-card" style="--accent:#f59e0b;">
+            <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--text-soft);">F&B Orders</p>
+            <p class="text-2xl font-bold" id="stat-orders">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);" id="stat-orders-sub">Loading...</p>
+          </div>
+          <div class="stat-card" style="--accent:#8b5cf6;">
+            <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--text-soft);">Guest Reviews</p>
+            <p class="text-2xl font-bold" id="stat-reviews">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);" id="stat-reviews-sub">Loading...</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="card p-5 lg:col-span-2">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-sm font-semibold">Recent Bookings</h3>
+              <button onclick="goTo('bookings')" class="text-xs text-blue-600 hover:underline">View all</button>
+            </div>
+            <div class="table-wrap" style="border:none; border-radius:0;">
+              <table class="data-table">
+                <thead><tr><th>Guest</th><th>Room</th><th>Check-in</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody id="dash-bookings-body"><tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card p-5">
+            <h3 class="text-sm font-semibold mb-4">Recent F&B Orders</h3>
+            <div id="dash-orders-list" class="space-y-3">
+              <div class="text-center py-4 text-sm" style="color:var(--text-soft);"><span class="spinner"></span>Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-5">
+          <h3 class="text-sm font-semibold mb-4">Activity Feed</h3>
+          <div id="activity-feed" class="space-y-2">
+            <div class="text-center py-4 text-sm" style="color:var(--text-soft);"><span class="spinner"></span>Loading...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOOKINGS -->
+      <section id="view-bookings" class="view space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+          <div>
+            <h3 class="font-semibold">All Bookings</h3>
+            <p class="text-xs mt-0.5" style="color:var(--text-soft);">Live from guest portal</p>
+          </div>
+          <div class="flex gap-2">
+            <select id="booking-status-filter" onchange="loadBookings()" class="inp text-xs" style="width:auto; padding:7px 10px;">
+              <option value="">All Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Guest</th><th>Email</th><th>Room Type</th><th>Check-in</th><th>Check-out</th><th>Guests</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="bookings-body"><tr class="loading-row"><td colspan="10"><span class="spinner"></span>Loading bookings...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- FRONT DESK -->
+      <section id="view-front-desk" class="view space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold">Front Desk — Room Overview</h3>
+          <button onclick="openModal('walkin-modal')" class="btn-gold"><i class="fa-solid fa-plus mr-1.5"></i>Walk-in</button>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-2">
+          <div class="card p-4 text-center">
+            <p class="text-2xl font-bold" id="fd-occupied" style="color:#3b82f6;">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Occupied</p>
+          </div>
+          <div class="card p-4 text-center">
+            <p class="text-2xl font-bold" id="fd-vacant" style="color:#22c55e;">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Vacant</p>
+          </div>
+          <div class="card p-4 text-center">
+            <p class="text-2xl font-bold" id="fd-today" style="color:var(--gold);">—</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Today's Arrivals</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Guest</th><th>Room Type</th><th>Check-in</th><th>Check-out</th><th>Payment</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="frontdesk-body"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- F&B ORDERS -->
+      <section id="view-orders" class="view space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="font-semibold">F&B Orders</h3>
+            <p class="text-xs mt-0.5" style="color:var(--text-soft);">Live from virtual waiter</p>
+          </div>
+          <select id="order-status-filter" onchange="loadOrders()" class="inp text-xs" style="width:auto; padding:7px 10px;">
+            <option value="">All Orders</option>
+            <option value="pending">Pending</option>
+            <option value="preparing">Preparing</option>
+            <option value="served">Served</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="orders-grid">
+          <div class="text-center py-8 col-span-full" style="color:var(--text-soft);"><span class="spinner"></span>Loading orders...</div>
+        </div>
+      </section>
+
+      <!-- REVIEWS -->
+      <section id="view-reviews" class="view space-y-4">
+        <h3 class="font-semibold">Guest Reviews</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="reviews-grid">
+          <div class="text-center py-8 col-span-full" style="color:var(--text-soft);"><span class="spinner"></span>Loading reviews...</div>
+        </div>
+      </section>
+
+      <!-- MESSAGES -->
+      <section id="view-messages" class="view space-y-4">
+        <h3 class="font-semibold">Contact Messages</h3>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Message</th><th>Received</th><th>Actions</th></tr></thead>
+            <tbody id="messages-body"><tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading messages...</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- HOUSEKEEPING -->
+      <section id="view-housekeeping" class="view space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-semibold">Housekeeping Tasks</h3>
+          <button onclick="autoAssign()" class="btn-gold"><i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i>Auto-Assign</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="hk-grid">
+          <!-- Hardcoded HK tasks (not yet in Supabase) -->
+        </div>
+      </section>
+
+      <!-- HR -->
+      <section id="view-hr" class="view space-y-5">
+        <h3 class="font-semibold">Staff & HR</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="staff-grid"></div>
+        <div class="card p-5">
+          <h3 class="text-sm font-semibold mb-4">Payroll Summary — May 2026</h3>
+          <div class="space-y-3 text-sm max-w-sm">
+            <div class="flex justify-between"><span style="color:var(--text-soft);">Gross Payroll</span><span class="font-bold">Ksh 2,850,000</span></div>
+            <div class="flex justify-between"><span style="color:var(--text-soft);">Overtime</span><span class="font-bold" style="color:var(--gold);">Ksh 145,000</span></div>
+            <div class="flex justify-between"><span style="color:var(--text-soft);">NSSF & NHIF</span><span class="font-bold text-red-500">−Ksh 112,400</span></div>
+            <hr style="border-color:var(--border);">
+            <div class="flex justify-between font-bold"><span>Net Disbursement</span><span class="text-green-600">Ksh 2,882,600</span></div>
+            <button onclick="showToast('Payroll processed — payslips sent to staff.')" class="btn-gold w-full py-2.5 text-sm mt-2">Process Payroll</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="view-reports" class="view space-y-4">
+        <h3 class="font-semibold">Reports & Analytics</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card p-5 cursor-pointer hover:shadow-md transition border-l-4 border-red-400" onclick="showToast('Generating Daily Revenue Report…')">
+            <i class="fa-solid fa-file-pdf text-red-400 text-xl mb-2"></i>
+            <h4 class="font-semibold text-sm">Daily Revenue</h4>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">PDF with M-Pesa breakdowns</p>
+          </div>
+          <div class="card p-5 cursor-pointer hover:shadow-md transition border-l-4 border-blue-400" onclick="showToast('Generating Occupancy Report…')">
+            <i class="fa-solid fa-chart-line text-blue-400 text-xl mb-2"></i>
+            <h4 class="font-semibold text-sm">Occupancy</h4>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Monthly patterns & RevPAR</p>
+          </div>
+          <div class="card p-5 cursor-pointer hover:shadow-md transition border-l-4" style="border-color:var(--gold);" onclick="showToast('Generating F&B Report…')">
+            <i class="fa-solid fa-utensils text-xl mb-2" style="color:var(--gold);"></i>
+            <h4 class="font-semibold text-sm">F&B Performance</h4>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Menu popularity & margins</p>
+          </div>
+          <div class="card p-5 cursor-pointer hover:shadow-md transition border-l-4 border-green-400" onclick="showToast('Generating Audit Log…')">
+            <i class="fa-solid fa-file-shield text-green-400 text-xl mb-2"></i>
+            <h4 class="font-semibold text-sm">Audit Log</h4>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">System events & changes</p>
+          </div>
+        </div>
+        <div class="card p-5">
+          <h3 class="text-sm font-semibold mb-3">Booking Summary by Room Type</h3>
+          <div style="max-height:260px; position:relative;"><canvas id="bookings-chart"></canvas></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="walkin-modal" class="modal-bg">
+  <div class="modal-box p-6">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="text-lg">New Walk-in Check-in</h3>
+      <button onclick="closeModal('walkin-modal')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    </div>
+    <form onsubmit="processWalkin(event)" class="space-y-4">
+      <div><label class="lbl">Guest Name</label><input class="inp" id="wi-name" placeholder="Full name" required></div>
+      <div><label class="lbl">Email</label><input class="inp" id="wi-email" type="email" placeholder="email@example.com" required></div>
+      <div><label class="lbl">Phone</label><input class="inp" id="wi-phone" placeholder="+254..."></div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Room Type</label>
+          <select class="inp" id="wi-room">
+            <option>Deluxe Suite</option><option>Executive Room</option><option>Presidential Penthouse</option><option>Standard Twin</option><option>Family Suite</option><option>Classic Double</option>
+          </select>
+        </div>
+        <div><label class="lbl">Guests</label>
+          <select class="inp" id="wi-guests"><option>1 Adult</option><option>2 Adults</option><option>2 Adults, 1 Child</option></select>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="lbl">Check-in</label><input class="inp" type="date" id="wi-checkin" required></div>
+        <div><label class="lbl">Check-out</label><input class="inp" type="date" id="wi-checkout" required></div>
+      </div>
+      <div><label class="lbl">Payment</label>
+        <select class="inp" id="wi-payment"><option value="card">Credit Card</option><option value="mpesa">M-Pesa</option><option value="cash">Cash</option></select>
+      </div>
+      <button type="submit" class="btn-gold w-full py-3">Confirm Check-in</button>
+    </form>
+  </div>
+</div>
+
+<div id="booking-detail-modal" class="modal-bg">
+  <div class="modal-box p-6">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="text-lg">Booking Details</h3>
+      <button onclick="closeModal('booking-detail-modal')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+    </div>
+    <div id="booking-detail-content" class="space-y-3 text-sm"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast">
+  <i class="fa-solid fa-circle-check text-green-400"></i>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+  // ── Supabase ─────────────────────────────────────────────
+  const db = supabase.createClient(
+    'https://neknhnxwcmcxwdqrwdta.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5la25obnh3Y21jeHdkcXJ3ZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNzcwNjYsImV4cCI6MjA5Mzc1MzA2Nn0.tHNjfKhtf0i7p0O9j-GviJVJrFL6f1bfW44_i48dC4Y'
+  );
+
+  // ── State ────────────────────────────────────────────────
+  let currentView = 'dashboard';
+  let bookingsChart = null;
+
+  // ── Auth ─────────────────────────────────────────────────
+  function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    if (email === 'admin@makarhotels.com' && pass === 'admin') {
+      document.getElementById('login-page').style.display = 'none';
+      const panel = document.getElementById('admin-panel');
+      panel.classList.remove('hidden');
+      panel.style.display = 'flex';
+      initAdmin();
+    } else {
+      showToast('Invalid credentials');
+    }
+  }
+
+  function handleLogout() {
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('admin-panel').classList.add('hidden');
+    document.getElementById('login-page').style.display = 'flex';
+  }
+
+  // ── Navigation ───────────────────────────────────────────
+  function goTo(view) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    const navBtn = document.getElementById('nav-' + view);
+    if (navBtn) navBtn.classList.add('active');
+    const titles = { dashboard: 'Dashboard', bookings: 'Bookings', 'front-desk': 'Front Desk', orders: 'F&B Orders', reviews: 'Guest Reviews', messages: 'Messages', housekeeping: 'Housekeeping', hr: 'HR & Staff', reports: 'Reports' };
+    document.getElementById('page-title').textContent = titles[view] || view;
+    currentView = view;
+    closeSidebar();
+    loadView(view);
+  }
+
+  function loadView(view) {
+    if (view === 'dashboard') loadDashboard();
+    else if (view === 'bookings') loadBookings();
+    else if (view === 'front-desk') loadFrontDesk();
+    else if (view === 'orders') loadOrders();
+    else if (view === 'reviews') loadReviews();
+    else if (view === 'messages') loadMessages();
+    else if (view === 'housekeeping') renderHousekeeping();
+    else if (view === 'hr') renderHR();
+    else if (view === 'reports') loadReports();
+  }
+
+  // ── Sidebar ───────────────────────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  }
+
+  // ── Dashboard ────────────────────────────────────────────
+  async function loadDashboard() {
+    const [bookRes, orderRes, reviewRes, msgRes] = await Promise.all([
+      db.from('bookings').select('*').order('created_at', { ascending: false }),
+      db.from('orders').select('*').order('created_at', { ascending: false }),
+      db.from('reviews').select('*').order('created_at', { ascending: false }),
+      db.from('contact_messages').select('*').order('created_at', { ascending: false })
+    ]);
+
+    const bookings = bookRes.data || [];
+    const orders = orderRes.data || [];
+    const reviews = reviewRes.data || [];
+    const msgs = msgRes.data || [];
+
+    // Stats
+    const totalRevenue = bookings.reduce((s, b) => s + (b.total_amount || 0), 0);
+    const avgRating = reviews.length ? (reviews.reduce((s, r) => s + (r.rating || 0), 0) / reviews.length).toFixed(1) : '—';
+    const todayOrders = orders.filter(o => o.created_at?.startsWith(new Date().toISOString().slice(0, 10)));
+
+    document.getElementById('stat-bookings').textContent = bookings.length;
+    document.getElementById('stat-bookings-sub').textContent = bookings.filter(b => b.status === 'confirmed').length + ' confirmed';
+    document.getElementById('stat-revenue').textContent = 'Ksh ' + totalRevenue.toLocaleString();
+    document.getElementById('stat-orders').textContent = orders.length;
+    document.getElementById('stat-orders-sub').textContent = todayOrders.length + ' today';
+    document.getElementById('stat-reviews').textContent = reviews.length;
+    document.getElementById('stat-reviews-sub').textContent = avgRating !== '—' ? '★ ' + avgRating + ' avg' : 'No reviews yet';
+
+    // Badges
+    updateBadge('badge-bookings', bookings.filter(b => b.status === 'pending').length);
+    updateBadge('badge-orders', orders.filter(o => o.status === 'pending').length);
+    updateBadge('badge-reviews', reviews.filter(r => !r.approved).length);
+    updateBadge('badge-messages', msgs.filter(m => !m.read).length);
+
+    // Recent bookings table
+    const tbody = document.getElementById('dash-bookings-body');
+    tbody.innerHTML = bookings.slice(0, 5).map(b => `
+      <tr>
+        <td class="font-medium">${b.guest_name || '—'}</td>
+        <td>${b.room_type || '—'}</td>
+        <td class="mono text-xs">${b.check_in || '—'}</td>
+        <td class="font-medium">Ksh ${(b.total_amount || 0).toLocaleString()}</td>
+        <td>${statusBadge(b.status)}</td>
+      </tr>
+    `).join('') || '<tr class="loading-row"><td colspan="5">No bookings yet</td></tr>';
+
+    // Recent orders
+    const ordersList = document.getElementById('dash-orders-list');
+    ordersList.innerHTML = orders.slice(0, 4).map(o => {
+      const items = safeParseItems(o.items);
+      return `
+        <div class="flex items-start justify-between p-3 rounded-lg" style="background:#faf9f6;">
+          <div>
+            <p class="text-xs font-semibold">${items.slice(0, 2).map(i => i.name).join(', ') || 'Order'}</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-soft);">${timeAgo(o.created_at)}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs font-bold">Ksh ${(o.total || 0).toLocaleString()}</p>
+            ${statusBadge(o.status)}
+          </div>
+        </div>`;
+    }).join('') || '<p class="text-sm text-center py-4" style="color:var(--text-soft);">No orders yet</p>';
+
+    // Activity feed
+    const all = [
+      ...bookings.slice(0, 3).map(b => ({ time: b.created_at, icon: 'fa-calendar-check', color: '#3b82f6', msg: `${b.guest_name} booked a ${b.room_type}`, sub: 'Guest Portal' })),
+      ...orders.slice(0, 3).map(o => ({ time: o.created_at, icon: 'fa-utensils', color: '#f59e0b', msg: `New F&B order placed`, sub: 'Virtual Waiter' })),
+      ...reviews.slice(0, 2).map(r => ({ time: r.created_at, icon: 'fa-star', color: '#8b5cf6', msg: `${r.name} left a ${r.rating}★ review`, sub: 'Guest Portal' })),
+      ...msgs.slice(0, 2).map(m => ({ time: m.created_at, icon: 'fa-envelope', color: '#22c55e', msg: `New message from ${m.name}`, sub: 'Contact Form' }))
+    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 8);
+
+    document.getElementById('activity-feed').innerHTML = all.length ? all.map(a => `
+      <div class="flex items-center gap-3 py-2 border-b" style="border-color:#f0ede7;">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style="background:${a.color}22;">
+          <i class="fa-solid ${a.icon} text-xs" style="color:${a.color};"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium truncate">${a.msg}</p>
+          <p class="text-xs" style="color:var(--text-soft);">${a.sub} · ${timeAgo(a.time)}</p>
+        </div>
+      </div>
+    `).join('') : '<p class="text-sm text-center py-4" style="color:var(--text-soft);">No activity yet</p>';
+  }
+
+  // ── Bookings ─────────────────────────────────────────────
+  async function loadBookings() {
+    const filter = document.getElementById('booking-status-filter')?.value;
+    let q = db.from('bookings').select('*').order('created_at', { ascending: false });
+    if (filter) q = q.eq('status', filter);
+    const { data, error } = await q;
+    const rows = data || [];
+    document.getElementById('bookings-body').innerHTML = rows.map(b => `
+      <tr>
+        <td><p class="font-medium text-sm">${b.guest_name || '—'}</p><p class="text-xs" style="color:var(--text-soft);">${b.phone || ''}</p></td>
+        <td class="text-xs">${b.email || '—'}</td>
+        <td class="text-xs">${b.room_type || '—'}</td>
+        <td class="mono text-xs">${b.check_in || '—'}</td>
+        <td class="mono text-xs">${b.check_out || '—'}</td>
+        <td class="text-xs">${b.guests || '—'}</td>
+        <td class="text-xs capitalize">${b.payment_method || '—'}</td>
+        <td class="font-semibold text-xs">Ksh ${(b.total_amount || 0).toLocaleString()}</td>
+        <td>${statusBadge(b.status)}</td>
+        <td>
+          <div class="flex gap-1">
+            <button onclick="viewBooking(${JSON.stringify(b).replace(/"/g,'&quot;')})" class="btn-outline text-xs py-1 px-2">View</button>
+            ${b.status !== 'cancelled' ? `<button onclick="cancelBooking('${b.id}')" class="btn-danger text-xs py-1 px-2">Cancel</button>` : ''}
+          </div>
+        </td>
+      </tr>
+    `).join('') || '<tr class="loading-row"><td colspan="10">No bookings found</td></tr>';
+  }
+
+  // ── Front Desk ───────────────────────────────────────────
+  async function loadFrontDesk() {
+    const { data } = await db.from('bookings').select('*').order('check_in');
+    const rows = data || [];
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('fd-occupied').textContent = rows.filter(b => b.status === 'confirmed').length;
+    document.getElementById('fd-vacant').textContent = Math.max(0, 62 - rows.filter(b => b.status === 'confirmed').length);
+    document.getElementById('fd-today').textContent = rows.filter(b => b.check_in === today).length;
+    document.getElementById('frontdesk-body').innerHTML = rows.map(b => `
+      <tr>
+        <td><p class="font-medium text-sm">${b.guest_name}</p><p class="text-xs" style="color:var(--text-soft);">${b.id_number || ''}</p></td>
+        <td class="text-xs">${b.room_type}</td>
+        <td class="mono text-xs">${b.check_in}</td>
+        <td class="mono text-xs">${b.check_out}</td>
+        <td class="text-xs capitalize">${b.payment_method}</td>
+        <td class="font-semibold text-xs">Ksh ${(b.total_amount||0).toLocaleString()}</td>
+        <td>${statusBadge(b.status)}</td>
+        <td>
+          ${b.status === 'confirmed' ? `<button onclick="checkoutBooking('${b.id}')" class="btn-danger text-xs py-1 px-2">Check-out</button>` : ''}
+        </td>
+      </tr>
+    `).join('') || '<tr class="loading-row"><td colspan="8">No bookings</td></tr>';
+  }
+
+  // ── Orders ───────────────────────────────────────────────
+  async function loadOrders() {
+    const filter = document.getElementById('order-status-filter')?.value;
+    let q = db.from('orders').select('*').order('created_at', { ascending: false });
+    if (filter) q = q.eq('status', filter);
+    const { data } = await q;
+    const orders = data || [];
+    const grid = document.getElementById('orders-grid');
+    grid.innerHTML = orders.map(o => {
+      const items = safeParseItems(o.items);
+      const colorMap = { pending: '#f59e0b', preparing: '#6366f1', served: '#22c55e' };
+      const color = colorMap[o.status] || '#94a3b8';
+      return `
+        <div class="order-card" style="border-top-color:${color};">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <p class="text-xs mono" style="color:var(--text-soft);">#${String(o.id).slice(0,8)}</p>
+              <p class="font-semibold text-sm mt-0.5">${items.slice(0,2).map(i=>i.name).join(', ') || 'Order'}</p>
+            </div>
+            ${statusBadge(o.status)}
+          </div>
+          <div class="text-xs mt-2 space-y-0.5" style="color:var(--text-soft);">
+            ${items.map(i=>`<div class="flex justify-between"><span>${i.name}</span><span>Ksh ${(i.price||0).toLocaleString()}</span></div>`).join('')}
+          </div>
+          <div class="flex justify-between items-center mt-3 pt-3 border-t" style="border-color:var(--border);">
+            <span class="font-bold text-sm">Ksh ${(o.total||0).toLocaleString()}</span>
+            <span class="text-xs" style="color:var(--text-soft);">${timeAgo(o.created_at)}</span>
+          </div>
+          ${o.status !== 'served' ? `<button onclick="advanceOrder('${o.id}','${o.status}')" class="btn-gold w-full mt-3 py-2 text-xs">${o.status === 'pending' ? 'Start Preparing' : 'Mark Served'}</button>` : `<div class="text-center text-xs mt-3 py-2 rounded-lg" style="background:#f0fdf4;color:#15803d;">✓ Completed</div>`}
+        </div>`;
+    }).join('') || '<div class="col-span-full text-center py-8 text-sm" style="color:var(--text-soft);">No orders yet</div>';
+  }
+
+  // ── Reviews ──────────────────────────────────────────────
+  async function loadReviews() {
+    const { data } = await db.from('reviews').select('*').order('created_at', { ascending: false });
+    const reviews = data || [];
+    document.getElementById('reviews-grid').innerHTML = reviews.map(r => `
+      <div class="card p-5">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <p class="font-semibold">${r.name}</p>
+            <p class="text-xs" style="color:var(--text-soft);">${r.email} · ${timeAgo(r.created_at)}</p>
+          </div>
+          <div class="flex gap-0.5">${'★'.repeat(r.rating || 0)}<span class="text-xs ml-1 font-bold" style="color:var(--gold);">${r.rating}/5</span></div>
+        </div>
+        <p class="text-sm leading-relaxed" style="color:var(--text-mid);">${r.text}</p>
+      </div>
+    `).join('') || '<div class="col-span-full text-center py-8 text-sm" style="color:var(--text-soft);">No reviews yet</div>';
+  }
+
+  // ── Messages ─────────────────────────────────────────────
+  async function loadMessages() {
+    const { data } = await db.from('contact_messages').select('*').order('created_at', { ascending: false });
+    const msgs = data || [];
+    document.getElementById('messages-body').innerHTML = msgs.map(m => `
+      <tr>
+        <td class="font-medium text-sm">${m.name}</td>
+        <td class="text-xs">${m.email}</td>
+        <td class="text-xs max-w-xs truncate" style="max-width:200px;">${m.message}</td>
+        <td class="text-xs mono">${timeAgo(m.created_at)}</td>
+        <td><button onclick="showToast('Reply feature coming soon')" class="btn-outline text-xs py-1 px-2">Reply</button></td>
+      </tr>
+    `).join('') || '<tr class="loading-row"><td colspan="5">No messages yet</td></tr>';
+  }
+
+  // ── Housekeeping (local data) ─────────────────────────────
+  const hkData = [
+    { room: '102', priority: 'High', status: 'pending', staff: '', type: 'Full Clean' },
+    { room: '202', priority: 'Medium', status: 'in-progress', staff: 'Jane Doe', type: 'Turn-down' },
+    { room: '302', priority: 'High', status: 'pending', staff: '', type: 'Deep Clean' },
+    { room: '405', priority: 'Low', status: 'completed', staff: 'Mary K.', type: 'Inspection' }
+  ];
+  function renderHousekeeping() {
+    const colors = { High: '#ef4444', Medium: '#f59e0b', Low: '#22c55e' };
+    document.getElementById('hk-grid').innerHTML = hkData.map(h => `
+      <div class="hk-card border-l-4" style="border-color:${colors[h.priority]};">
+        <div class="flex justify-between items-start mb-2">
+          <p class="font-bold">Room ${h.room}</p>
+          ${statusBadge(h.status)}
+        </div>
+        <p class="text-sm font-medium">${h.type}</p>
+        <p class="text-xs mt-1 mb-4" style="color:var(--text-soft);">${h.staff || 'Unassigned'} · ${h.priority} priority</p>
+        <button onclick="cycleHk('${h.room}')" class="btn-outline w-full text-xs py-2">${h.status === 'pending' ? 'Start' : h.status === 'in-progress' ? 'Mark Complete' : '✓ Done'}</button>
+      </div>
+    `).join('');
+  }
+  function cycleHk(room) {
+    const h = hkData.find(x => x.room === room);
+    if (!h) return;
+    if (h.status === 'pending') { h.status = 'in-progress'; h.staff = 'Auto-assigned'; }
+    else if (h.status === 'in-progress') h.status = 'completed';
+    showToast(`Room ${room} updated`);
+    renderHousekeeping();
+  }
+  function autoAssign() {
+    hkData.forEach(h => { if (h.status === 'pending') h.staff = 'Auto-assigned'; });
+    showToast('Tasks auto-assigned to available staff');
+    renderHousekeeping();
+  }
+
+  // ── HR (local data) ──────────────────────────────────────
+  const staffData = [
+    { name: 'Jane Doe', role: 'Head Housekeeper', dept: 'Housekeeping', shift: '08:00–16:00' },
+    { name: 'Mike Ross', role: 'Sous Chef', dept: 'F&B', shift: '14:00–22:00' },
+    { name: 'Sarah Lin', role: 'Front Desk Lead', dept: 'Reception', shift: '07:00–15:00' },
+    { name: 'Paul Mwangi', role: 'Night Auditor', dept: 'Finance', shift: '22:00–06:00' }
+  ];
+  function renderHR() {
+    document.getElementById('staff-grid').innerHTML = staffData.map(s => `
+      <div class="staff-card">
+        <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-lg" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">
+          ${s.name.split(' ').map(n=>n[0]).join('')}
+        </div>
+        <p class="font-semibold text-sm">${s.name}</p>
+        <p class="text-xs" style="color:var(--text-soft);">${s.role}</p>
+        <span class="badge badge-gold mt-2">${s.dept}</span>
+        <p class="text-xs mt-2 mono" style="color:var(--text-soft);">${s.shift}</p>
+      </div>
+    `).join('');
+  }
+
+  // ── Reports ──────────────────────────────────────────────
+  async function loadReports() {
+    const { data } = await db.from('bookings').select('room_type, total_amount');
+    const rooms = data || [];
+    const counts = {};
+    rooms.forEach(r => { counts[r.room_type] = (counts[r.room_type] || 0) + 1; });
+    const labels = Object.keys(counts);
+    const values = Object.values(counts);
+    const canvas = document.getElementById('bookings-chart');
+    if (bookingsChart) bookingsChart.destroy();
+    if (!labels.length) { canvas.closest('div').innerHTML = '<p class="text-center py-8 text-sm" style="color:var(--text-soft);">No booking data yet</p>'; return; }
+    bookingsChart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Bookings', data: values, backgroundColor: '#b8952a', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f0ede7' }, ticks: { stepSize: 1 } }, x: { grid: { display: false } } } }
+    });
+  }
+
+  // ── Actions ──────────────────────────────────────────────
+  async function cancelBooking(id) {
+    if (!confirm('Cancel this booking?')) return;
+    await db.from('bookings').update({ status: 'cancelled' }).eq('id', id);
+    showToast('Booking cancelled');
+    loadBookings();
+  }
+
+  async function checkoutBooking(id) {
+    if (!confirm('Process check-out for this guest?')) return;
+    await db.from('bookings').update({ status: 'checked-out' }).eq('id', id);
+    showToast('Guest checked out');
+    loadFrontDesk();
+  }
+
+  async function advanceOrder(id, currentStatus) {
+    const next = currentStatus === 'pending' ? 'preparing' : 'served';
+    await db.from('orders').update({ status: next }).eq('id', id);
+    showToast(`Order marked as ${next}`);
+    loadOrders();
+  }
+
+  async function processWalkin(e) {
+    e.preventDefault();
+    const { error } = await db.from('bookings').insert({
+      guest_name: document.getElementById('wi-name').value,
+      email: document.getElementById('wi-email').value,
+      phone: document.getElementById('wi-phone').value,
+      room_type: document.getElementById('wi-room').value,
+      guests: document.getElementById('wi-guests').value,
+      check_in: document.getElementById('wi-checkin').value,
+      check_out: document.getElementById('wi-checkout').value,
+      payment_method: document.getElementById('wi-payment').value,
+      status: 'confirmed',
+      created_at: new Date().toISOString()
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('Walk-in checked in successfully');
+    closeModal('walkin-modal');
+    e.target.reset();
+    loadFrontDesk();
+  }
+
+  function viewBooking(b) {
+    document.getElementById('booking-detail-content').innerHTML = `
+      <div class="grid grid-cols-2 gap-3">
+        ${[['Guest', b.guest_name], ['Email', b.email], ['Phone', b.phone], ['ID Number', b.id_number], ['Room Type', b.room_type], ['Guests', b.guests], ['Check-in', b.check_in], ['Check-out', b.check_out], ['Payment', b.payment_method], ['Total', 'Ksh ' + (b.total_amount||0).toLocaleString()], ['Status', b.status]].map(([k,v]) => `
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide mb-1" style="color:var(--text-soft);">${k}</p>
+            <p class="text-sm font-medium">${v || '—'}</p>
+          </div>
+        `).join('')}
+      </div>
+      <div class="mt-4 pt-4 border-t text-xs" style="color:var(--text-soft); border-color:var(--border);">Booked ${timeAgo(b.created_at)}</div>
+    `;
+    openModal('booking-detail-modal');
+  }
+
+  // ── Refresh ──────────────────────────────────────────────
+  async function refreshAll() {
+    const icon = document.getElementById('refresh-icon');
+    icon.style.animation = 'spin 0.5s linear infinite';
+    await loadView(currentView);
+    setTimeout(() => icon.style.animation = '', 500);
+    showToast('Data refreshed');
+  }
+
+  // ── Helpers ──────────────────────────────────────────────
+  function safeParseItems(raw) {
+    try { return JSON.parse(raw) || []; } catch { return []; }
+  }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '—';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return Math.floor(hrs / 24) + 'd ago';
+  }
+
+  function statusBadge(status) {
+    const map = {
+      confirmed: 'badge-green', pending: 'badge-yellow', cancelled: 'badge-red',
+      'checked-out': 'badge-gray', preparing: 'badge-purple', served: 'badge-green',
+      'in-progress': 'badge-blue', completed: 'badge-green', 'high': 'badge-red'
+    };
+    return `<span class="badge ${map[status] || 'badge-gray'}">${status || '—'}</span>`;
+  }
+
+  function updateBadge(id, count) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (count > 0) { el.textContent = count; el.classList.remove('hidden'); }
+    else el.classList.add('hidden');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-msg').textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+
+  // ── Init ─────────────────────────────────────────────────
+  function initAdmin() {
+    // Clock
+    const clockEl = document.getElementById('sidebar-clock');
+    setInterval(() => { clockEl.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }); }, 1000);
+
+    // Modal backdrop close
+    document.querySelectorAll('.modal-bg').forEach(m => {
+      m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+    });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        const open = document.querySelector('.modal-bg.open');
+        if (open) closeModal(open.id);
+      }
+    });
+
+    // Load dashboard
+    loadDashboard();
+
+    // Auto-refresh every 30 seconds
+    setInterval(() => { if (currentView) loadView(currentView); }, 30000);
+  }
+</script>
+</body>
+</html>
