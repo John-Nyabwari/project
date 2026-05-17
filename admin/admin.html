@@ -191,9 +191,11 @@
       <button onclick="goTo('reviews')" class="nav-item" id="nav-reviews"><i class="fa-solid fa-star"></i> Guest Reviews <span id="badge-reviews" class="ml-auto badge badge-blue hidden"></span></button>
       <button onclick="goTo('messages')" class="nav-item" id="nav-messages"><i class="fa-solid fa-envelope"></i> Messages <span id="badge-messages" class="ml-auto badge badge-red hidden"></span></button>
       <button onclick="goTo('housekeeping')" class="nav-item" id="nav-housekeeping"><i class="fa-solid fa-broom"></i> Housekeeping</button>
+      <button onclick="goTo('inventory')" class="nav-item" id="nav-inventory"><i class="fa-solid fa-boxes-stacked"></i> Inventory & Suppliers</button>
 
       <p class="text-xs font-semibold uppercase tracking-widest px-3 mb-2 mt-5" style="color:#334155;">Admin</p>
       <button onclick="goTo('hr')" class="nav-item" id="nav-hr"><i class="fa-solid fa-users"></i> HR & Staff</button>
+      <button onclick="goTo('accountant')" class="nav-item" id="nav-accountant"><i class="fa-solid fa-calculator"></i> Accountant <span id="badge-accountant" class="ml-auto badge badge-red hidden"></span></button>
       <button onclick="goTo('reports')" class="nav-item" id="nav-reports"><i class="fa-solid fa-file-lines"></i> Reports</button>
     </nav>
 
@@ -433,9 +435,170 @@
         </div>
       </section>
 
+      <!-- INVENTORY & SUPPLIERS -->
+      <section id="view-inventory" class="view space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between gap-3">
+          <div>
+            <h3 class="font-semibold">Inventory & Suppliers</h3>
+            <p class="text-xs mt-0.5" style="color:var(--text-soft);">Manage stock levels, supplier contacts, and purchase orders</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openModal('supplier-modal')" class="btn-outline text-xs"><i class="fa-solid fa-plus mr-1"></i>Add Supplier</button>
+            <button onclick="openModal('invoice-modal')" class="btn-gold text-xs"><i class="fa-solid fa-file-invoice-dollar mr-1"></i>Generate Invoice</button>
+          </div>
+        </div>
+
+        <!-- Stock summary cards -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="card p-4 border-l-4 border-green-400">
+            <p class="text-2xl font-bold text-green-600" id="inv-ok">124</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">OK Stock</p>
+          </div>
+          <div class="card p-4 border-l-4 border-yellow-400">
+            <p class="text-2xl font-bold text-yellow-600" id="inv-low">8</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Low Stock</p>
+          </div>
+          <div class="card p-4 border-l-4 border-red-400">
+            <p class="text-2xl font-bold text-red-600" id="inv-critical">3</p>
+            <p class="text-xs mt-1" style="color:var(--text-soft);">Critical / Out</p>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex gap-2 border-b" style="border-color:var(--border);">
+          <button onclick="switchInvTab('stock')" id="tab-stock" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--gold); border-color:var(--gold);">Stock Items</button>
+          <button onclick="switchInvTab('suppliers')" id="tab-suppliers" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--text-soft);">Suppliers</button>
+          <button onclick="switchInvTab('invoices')" id="tab-invoices" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent" style="color:var(--text-soft);">Invoices</button>
+        </div>
+
+        <!-- Stock Items tab -->
+        <div id="inv-tab-stock">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Item</th><th>Category</th><th>Supplier</th><th>Stock</th><th>Min Level</th><th>Unit Cost</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="stock-table-body">
+                <tr><td class="font-medium">Bath Towels (Large)</td><td>Linens</td><td>Global Linens Co.</td><td>45</td><td>50</td><td>Ksh 850</td><td><span class="badge badge-yellow">Low</span></td><td><button onclick="reorderItem('Bath Towels')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+                <tr><td class="font-medium">Tilapia Fillet (kg)</td><td>F&B</td><td>Nairobi Fresh Foods</td><td>12</td><td>15</td><td>Ksh 600</td><td><span class="badge badge-yellow">Low</span></td><td><button onclick="reorderItem('Tilapia Fillet')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+                <tr><td class="font-medium">Premium Shampoo</td><td>Amenities</td><td>CleanPro Supplies</td><td>80</td><td>40</td><td>Ksh 220</td><td><span class="badge badge-green">OK</span></td><td><button onclick="reorderItem('Premium Shampoo')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+                <tr><td class="font-medium">Red Wine (House)</td><td>Bar</td><td>Vintners Kenya</td><td>4</td><td>25</td><td>Ksh 2,400</td><td><span class="badge badge-red">Critical</span></td><td><button onclick="reorderItem('Red Wine')" class="btn-gold text-xs py-1 px-2">Urgent Reorder</button></td></tr>
+                <tr><td class="font-medium">Toilet Paper (roll)</td><td>Housekeeping</td><td>CleanPro Supplies</td><td>200</td><td>100</td><td>Ksh 45</td><td><span class="badge badge-green">OK</span></td><td><button onclick="reorderItem('Toilet Paper')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+                <tr><td class="font-medium">Nyama Choma (kg)</td><td>F&B</td><td>Nairobi Fresh Foods</td><td>8</td><td>20</td><td>Ksh 950</td><td><span class="badge badge-red">Critical</span></td><td><button onclick="reorderItem('Nyama Choma')" class="btn-gold text-xs py-1 px-2">Urgent Reorder</button></td></tr>
+                <tr><td class="font-medium">Bed Sheets (King)</td><td>Linens</td><td>Global Linens Co.</td><td>60</td><td>30</td><td>Ksh 3,200</td><td><span class="badge badge-green">OK</span></td><td><button onclick="reorderItem('Bed Sheets')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+                <tr><td class="font-medium">Mineral Water (500ml)</td><td>F&B</td><td>Nairobi Fresh Foods</td><td>300</td><td>150</td><td>Ksh 35</td><td><span class="badge badge-green">OK</span></td><td><button onclick="reorderItem('Mineral Water')" class="btn-outline text-xs py-1 px-2">Reorder</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Suppliers tab -->
+        <div id="inv-tab-suppliers" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="suppliers-grid">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Invoices tab -->
+        <div id="inv-tab-invoices" class="hidden">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Invoice #</th><th>Supplier</th><th>Items</th><th>Amount</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="invoices-table-body"><!-- rendered by JS --></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACCOUNTANT -->
+      <section id="view-accountant" class="view space-y-5">
+        <div class="flex items-start gap-4 card p-5" style="background:linear-gradient(135deg,#0f172a,#1e293b); border:none;">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">
+            <i class="fa-solid fa-calculator text-white text-xl"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold text-white text-lg">Finance & Accounts Office</h3>
+            <p class="text-sm mt-1" style="color:#94a3b8;">All invoices and payroll disbursements require accountant approval before processing. Pending items are flagged below.</p>
+            <div class="flex gap-3 mt-3">
+              <div class="text-center px-4 py-2 rounded-lg" style="background:rgba(255,255,255,0.07);">
+                <p class="text-xl font-bold text-white" id="acc-pending-invoices">0</p>
+                <p class="text-xs" style="color:#94a3b8;">Pending Invoices</p>
+              </div>
+              <div class="text-center px-4 py-2 rounded-lg" style="background:rgba(255,255,255,0.07);">
+                <p class="text-xl font-bold text-white" id="acc-pending-payroll">1</p>
+                <p class="text-xs" style="color:#94a3b8;">Payroll Awaiting</p>
+              </div>
+              <div class="text-center px-4 py-2 rounded-lg" style="background:rgba(255,255,255,0.07);">
+                <p class="text-xl font-bold" style="color:var(--gold-light);" id="acc-total-value">0</p>
+                <p class="text-xs" style="color:#94a3b8;">Total Value (Ksh)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Approvals -->
+        <div class="card p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold text-sm">Invoice Approval Queue</h3>
+            <span class="badge badge-red" id="inv-approval-count">0 pending</span>
+          </div>
+          <div class="table-wrap" style="border:none; border-radius:0;">
+            <table class="data-table">
+              <thead><tr><th>Invoice #</th><th>Supplier</th><th>Description</th><th>Amount</th><th>Submitted</th><th>Status</th><th>Accountant Actions</th></tr></thead>
+              <tbody id="acc-invoices-body"><!-- rendered by JS --></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payroll Approvals -->
+        <div class="card p-5">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold text-sm">Payroll Approval</h3>
+            <span class="badge badge-yellow">May 2026</span>
+          </div>
+          <div class="space-y-3">
+            <div class="flex justify-between py-2 border-b text-sm" style="border-color:var(--border);"><span style="color:var(--text-soft);">Gross Payroll</span><span class="font-bold">Ksh 2,850,000</span></div>
+            <div class="flex justify-between py-2 border-b text-sm" style="border-color:var(--border);"><span style="color:var(--text-soft);">Overtime</span><span class="font-bold" style="color:var(--gold);">Ksh 145,000</span></div>
+            <div class="flex justify-between py-2 border-b text-sm" style="border-color:var(--border);"><span style="color:var(--text-soft);">NSSF & NHIF Deductions</span><span class="font-bold text-red-500">−Ksh 112,400</span></div>
+            <div class="flex justify-between py-2 text-sm font-bold"><span>Net Disbursement</span><span class="text-green-600">Ksh 2,882,600</span></div>
+          </div>
+          <div id="payroll-approval-status" class="mt-4">
+            <div class="flex gap-3 p-4 rounded-xl items-center" style="background:#fefce8; border:1px solid #fde047;">
+              <i class="fa-solid fa-clock text-yellow-500 text-lg"></i>
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-yellow-800">Awaiting Accountant Approval</p>
+                <p class="text-xs text-yellow-700 mt-0.5">Submitted by Branch Manager on 17 May 2026</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="approvePayroll()" class="btn-gold text-xs py-2 px-4"><i class="fa-solid fa-check mr-1"></i>Approve</button>
+                <button onclick="rejectPayroll()" class="btn-danger text-xs py-2 px-3"><i class="fa-solid fa-xmark mr-1"></i>Reject</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Approved history -->
+        <div class="card p-5">
+          <h3 class="font-semibold text-sm mb-4">Approval History</h3>
+          <div class="space-y-2" id="approval-history">
+            <div class="flex items-center gap-3 py-2 border-b text-sm" style="border-color:var(--border);">
+              <span class="badge badge-green">Approved</span>
+              <span class="flex-1">April 2026 Payroll — Ksh 2,741,200</span>
+              <span class="text-xs" style="color:var(--text-soft);">30 Apr 2026 · Accountant</span>
+            </div>
+            <div class="flex items-center gap-3 py-2 border-b text-sm" style="border-color:var(--border);">
+              <span class="badge badge-green">Approved</span>
+              <span class="flex-1">INV-0041 — CleanPro Supplies — Ksh 48,000</span>
+              <span class="text-xs" style="color:var(--text-soft);">12 May 2026 · Accountant</span>
+            </div>
+            <div class="flex items-center gap-3 py-2 text-sm">
+              <span class="badge badge-red">Rejected</span>
+              <span class="flex-1">INV-0039 — Vintners Kenya — Ksh 112,000</span>
+              <span class="text-xs" style="color:var(--text-soft);">8 May 2026 · Missing delivery note</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </main>
-  </div>
-</div>
 
 <!-- MODALS -->
 <div id="walkin-modal" class="modal-bg">
@@ -525,7 +688,7 @@
     document.getElementById('view-' + view).classList.add('active');
     const navBtn = document.getElementById('nav-' + view);
     if (navBtn) navBtn.classList.add('active');
-    const titles = { dashboard: 'Dashboard', bookings: 'Bookings', 'front-desk': 'Front Desk', orders: 'F&B Orders', reviews: 'Guest Reviews', messages: 'Messages', housekeeping: 'Housekeeping', hr: 'HR & Staff', reports: 'Reports' };
+    const titles = { dashboard: 'Dashboard', bookings: 'Bookings', 'front-desk': 'Front Desk', orders: 'F&B Orders', reviews: 'Guest Reviews', messages: 'Messages', housekeeping: 'Housekeeping', inventory: 'Inventory & Suppliers', hr: 'HR & Staff', accountant: 'Accountant — Finance', reports: 'Reports' };
     document.getElementById('page-title').textContent = titles[view] || view;
     currentView = view;
     closeSidebar();
@@ -540,7 +703,9 @@
     else if (view === 'reviews') loadReviews();
     else if (view === 'messages') loadMessages();
     else if (view === 'housekeeping') renderHousekeeping();
+    else if (view === 'inventory') renderInventory();
     else if (view === 'hr') renderHR();
+    else if (view === 'accountant') renderAccountant();
     else if (view === 'reports') loadReports();
   }
 
